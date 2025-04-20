@@ -2,7 +2,7 @@
   import type { Tflight } from '$lib/types/flight';
   import { Label, Input, Button, Toast } from 'flowbite-svelte';
   import { CheckOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
-  import { FlightDB } from '$lib/db/database';
+  import { FlyListDB } from '$lib/db/database';
   import { fly } from 'svelte/transition';
 
   const flightInputs: Tflight = $state({
@@ -16,6 +16,10 @@
       arr_airport: "",
       dep_airport: "",
     },
+    archived: false,
+    created_at: new Date(),
+    id: 0,
+    last_edited: new Date(),
   })
 
   let hoursInput: number = $state(0)
@@ -28,7 +32,7 @@
 
   async function createFlight() {
     try {
-      await FlightDB.createFlight(flightInputs)
+      await FlyListDB.createFlight(flightInputs)
 
       showSuccessToast = true
 
@@ -71,9 +75,6 @@
         <Label>Flight Number</Label>
         <Input id="flight-no" placeholder="BA123" bind:value={flightInputs.company.fl_no}/>
       </span>
-
-
-    
       
       <span class="flex-1">
         <Label>Callsign</Label>
@@ -105,7 +106,7 @@
 </span>
 
 {#if showSuccessToast}
-  <Toast transition={fly} params={{ x: 200 }} color="green" class="mb-4" position="bottom-right" dismissable={false}>
+  <Toast transition={fly} params={{ x: 200 }} color="green" class="mb-4 rounded-lg" position="bottom-right" dismissable={false}>
     <CheckOutline slot="icon" class="w-6 h-6" /> Created New Flight
   </Toast>
 {/if}

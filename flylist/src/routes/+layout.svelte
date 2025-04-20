@@ -1,13 +1,13 @@
-<script>
-  import { goto } from "$app/navigation";
+<script lang="ts">
+  import { getToast } from "$lib/stores/toast.svelte";
   import { onMount } from "svelte";
   import "../app.css"
-  import { Sidebar, SidebarWrapper, SidebarBrand, SidebarItem, SidebarGroup } from 'flowbite-svelte';
-  import { ArchiveOutline, CogOutline, GridOutline, ListOutline, PlusOutline } from 'flowbite-svelte-icons';
-  import { FlightDB } from "$lib/db/database";
+  import { Sidebar, SidebarWrapper, SidebarBrand, SidebarItem, SidebarGroup, Toast, Button } from 'flowbite-svelte';
+  import { ArchiveOutline, CheckOutline, CodeOutline, CogOutline, GridOutline, InfoCircleOutline, ListOutline, PlusOutline } from 'flowbite-svelte-icons';
+  import { FlyListDB } from "$lib/db/database";
+  import { fly } from "svelte/transition";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
-
   let site = {
     name: 'FlyList',
     href: '/',
@@ -17,19 +17,45 @@
   let flightCount = $state(10);
 
   onMount(async () => {
-    const flights = await FlightDB.readFlight()
+    const flights = await FlyListDB.readFlight()
 
     if (flights.length > 0) {
       flightCount = flights.length    
     }
   })
 
+  let showToast = $state(false)
+  let toastMessage = $state("")
+  let toastType: "info" | "success" | "error" = $state("info")
+
+
+  let toast = getToast()
+
+  // Register a callback to listen for toast changes
+  toast.registerCallback((value) => {
+    if (value) {
+      toastMessage = value.title;
+      toastType = value.type;
+      showToast = true;
+      
+      // Automatically hide the toast after 5 seconds
+      setTimeout(() => {
+        showToast = false;
+      }, value.type !== "error" ? 1500 : 5000); // info & success 1.5s, error 5s
+    }
+  });
 
   const { children } = $props();
 
+  // function toggleToast() {
+  //   showToast = toast ? true : false
+
+  //   console.log($state.snapshot(toast.value))
+  // }
+
 </script>
 
-<main class="w-screen h-screen flex">
+<main class="w-screen h-screen flex ">
 
   <!-- Sidebar -->
 
@@ -37,7 +63,6 @@
     <SidebarWrapper divClass="overflow-y-auto py-4 px-3 bg-gray-50 rounded-sm dark:bg-gray-800 h-full flex flex-col">
       <SidebarGroup>
         <SidebarBrand {site} />
-
         <!-- <SidebarItem label="Dashboard"  href="/">
           <svelte:fragment slot="icon">
             <GridOutline class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
@@ -84,9 +109,29 @@
   </Sidebar>
 
   <!-- Page Content -->
-
   <div class="px-6 py-4 flex-1 flex flex-col">
     {@render children()}
   </div>
-
 </main>
+
+<Toast
+toastStatus={showToast}
+transition={fly}
+params={{ x: 200, duration: 350 }}
+class="mb-4 rounded-lg fixed bottom-4 right-4 z-50"
+color={toastType === "success" ? "green" : toastType === "error" ? "red" : "blue"}
+position="bottom-right">
+
+  <!-- Icon for info, success or error -->
+  <svelte:fragment slot="icon">
+    {#if toastType === "success"}
+      <CheckOutline class="w-6 h-6" />
+    {:else if toastType === "info"}
+      <InfoCircleOutline class="w-6 h-6" />
+    {:else}
+      <CodeOutline class="w-6 h-6" />
+    {/if}
+  </svelte:fragment>
+
+  {toastMessage}
+</Toast>
