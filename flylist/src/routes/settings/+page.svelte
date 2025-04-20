@@ -1,0 +1,1 @@
+<p class="text-white">Settings page</p>
