@@ -18,9 +18,10 @@
 
   onMount(async () => {
     const flights = await FlyListDB.readFlight()
+    const activeFlights = flights.filter((flight) => flight.archived === false)
 
-    if (flights.length > 0) {
-      flightCount = flights.length    
+    if (activeFlights.length > 0) {
+      flightCount = activeFlights.length
     }
   })
 

@@ -2,13 +2,13 @@
   import { FlyListDB } from "$lib/db/database";
   import type { Tflight } from "$lib/types/flight";
   import { Button, Dropdown, DropdownDivider, DropdownItem, Input, Label, Modal, Pagination, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
-  import { ArchiveOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FireOutline, FloppyDiskOutline, RefreshOutline } from "flowbite-svelte-icons";
+  import { ArchiveArrowDownOutline, ArchiveOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FireOutline, FloppyDiskOutline, RefreshOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
   import { open } from '@tauri-apps/plugin-shell';
   import { getToast } from "$lib/stores/toast.svelte";
   import { convertMinutes } from "$lib/functions/formatDuration";
   import { formatDate } from "$lib/functions/formatDate";
-  
+
   let flights: Tflight[] = $state([])
   let currentPageFlights: Tflight[] = $state([])
   let pages: { name: string, active: boolean }[] = $state([])
@@ -21,7 +21,7 @@
 
   async function loadData() {
     flights = await FlyListDB.readFlight()
-    flights = flights.filter((flight) => flight.archived !== true)
+    flights = flights.filter((flight) => flight.archived === true)
 
     pages = []
 
@@ -41,7 +41,7 @@
     if (!doToast) return
 
     toast.addToast({
-      title: "Flights Refreshed",
+      title: "Archived Refreshed",
       type: "info"
     })
   }
@@ -95,68 +95,6 @@
     loadPage()
   }
 
-  // Menu Options
-  async function editFlight(flight: Tflight, updated: Tflight) {
-    console.log($state.snapshot(flight))
-    console.log($state.snapshot(updated))
-
-    try {
-      const result = await FlyListDB.editFlight(flight, updated)
-
-      if (result) {
-        toast.addToast({
-          title: `Saved Changes to #${flight.id}`,
-          type: "success"
-        })
-      } else {
-        toast.addToast({
-          title: `Failed to save changes to #${flight.id}`,
-          type: "error"
-        })
-      }
-
-      editModal = false
-      await refreshFlights(false) 
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
-  async function openEditModal(flight: Tflight) {
-    await refreshFlights(false) // Forces dropdown to close
-
-    editModalHours = Math.floor(flight.duration / 60)
-    editModalMinutes = flight.duration % 60
-
-    editModalFlight = flight
-    editModalContent = JSON.parse(JSON.stringify(flight)) // Using JSON. will create deep copy
-    editModal = true
-  }
-
-  $effect(() => {
-    if (editModalContent?.duration) {
-      editModalContent.duration = (editModalHours * 60) + editModalMinutes
-    }
-  })
-
-  async function deleteFlight(flight: Tflight) {
-    try {
-      await FlyListDB.deleteFlight(flight)
-
-      await refreshFlights(false)
-
-      toast.addToast({
-        title: `Flight deleted`,
-        type: "success"
-      })
-    } catch (error) {
-      toast.addToast({
-        title: `Failed to delete flight`,
-        type: "error"
-      })
-    }
-  }
-
   async function archiveFlight(flight: Tflight) {
     try {
       await FlyListDB.toggleArchiveFlight(flight)
@@ -164,29 +102,21 @@
       await refreshFlights(false)
 
       toast.addToast({
-        title: `Flight Archived`,
+        title: `Restored Flight`,
         type: "success"
       })
     } catch (error) {
       toast.addToast({
-        title: `Failed to archive flight`,
+        title: `Failed to restore flight`,
         type: "error"
       })
     }
   }
-
-  // Edit Modal
-  let editModal = $state(false)
-  let editModalContent: Tflight | undefined = $state()
-  let editModalFlight: Tflight | undefined = $state()
-  let editModalHours: number = $state(0);
-  let editModalMinutes: number = $state(0);
-
 </script>
 
 <div class="flex justify-between items-center mb-6">
-  <h2 class="text-2xl text-white font-bold">Your Flights</h2>
-  <Button aria-label="Refresh Flights" onclick={() => {refreshFlights()}} size="sm" color="alternative" > <RefreshOutline /></Button>
+  <h2 class="text-2xl text-white font-bold">Archived Flights</h2>
+  <Button aria-label="Refresh Archived Flights" onclick={() => {refreshFlights()}} size="sm" color="alternative" > <RefreshOutline /></Button>
 </div>
 
 {#if flights.length > 0}
@@ -200,7 +130,7 @@
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.callsign.localeCompare(b.company.callsign)}>CALLSIGN</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.localeCompare(b.ac_type)}>AIRFRAME</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.duration - b.duration }>DURATION</TableHeadCell>
-        <TableHeadCell>ACTIONS</TableHeadCell>
+        <TableHeadCell></TableHeadCell>
       </TableHead>
       <TableBody tableBodyClass="divide-y ">
         <TableBodyRow slot="row" let:item>
@@ -212,19 +142,7 @@
           <TableBodyCell>{item.ac_type}</TableBodyCell>
           <TableBodyCell>{convertMinutes(item.duration)}</TableBodyCell>
           <TableBodyCell>
-            <DotsHorizontalOutline class="dots-menu-{item.id} dark:text-white" />
-            <Dropdown triggeredBy=".dots-menu-{item.id}">
-              <div slot="header" class="px-4 py-2 flex flex-col">
-                <span class="text-sm text-gray-400 italic flex items-center justify-between">Last Edited <EditOutline class="w-4 h-4" /></span>
-                <span>{formatDate(new Date(item.last_edited))}</span>
-                <span class="text-sm text-gray-400 italic flex items-center justify-between">Created At <CirclePlusOutline class="w-4 h-4" /></span>
-                <span>{formatDate(new Date(item.created_at))}</span>
-              </div>
-              <DropdownItem onclick={() => {openEditModal(item)}} class="flex gap-2"> <EditOutline /> Edit</DropdownItem>
-              <DropdownItem onclick={() => {archiveFlight(item)}} class="flex gap-2"> <ArchiveOutline/> Archive</DropdownItem>
-              <DropdownDivider />
-              <DropdownItem onclick={() => {deleteFlight(item)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
-            </Dropdown>
+            <Button aria-label="Archive Flight" onclick={() => {archiveFlight(item)}} size="sm" color="alternative" class="py-1.5 px-2"> <ArchiveArrowDownOutline /></Button>
           </TableBodyCell>
         </TableBodyRow>
       </TableBody>
@@ -255,64 +173,3 @@
     <Button href="/flights/create" size="sm">Create a Flight</Button>
   </div>
 {/if}
-
-<Modal open={editModal} on:close={() => {editModal = false}}>
-  {#if editModalContent && editModalFlight}
-    <form class="flex flex-col gap-2">
-      <h4 class="text-xl font-medium text-white flex items-center">Edit Flight #{editModalContent.id}</h4>
-      <p class="text-gray-500 ">Update details of this existing flight.</p>
-
-      <div class="flex gap-6">
-        <span class="flex-1">
-          <Label>Departure Airport</Label>
-          <Input bind:value={editModalContent.route.dep_airport}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Arrival Airport</Label>
-          <Input bind:value={editModalContent.route.arr_airport}/>
-        </span>
-      </div>
-  
-      <div class="flex gap-6">
-        <span class="flex-1">
-          <Label>Flight Number</Label>
-          <Input bind:value={editModalContent.company.fl_no}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Callsign</Label>
-          <Input bind:value={editModalContent.company.callsign}/>
-        </span>
-      </div>
-  
-      <div class="flex gap-6 ">
-        <span class="flex-4">
-          <Label>Aircraft Type</Label>
-          <Input bind:value={editModalContent.ac_type}/>
-        </span>
-  
-        
-        <span class="flex-1">
-          <Label>Hours</Label>
-          <Input type="number" bind:value={editModalHours}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Minutes</Label>
-          <Input type="number" bind:value={editModalMinutes}/>
-        </span>
-      </div>
-  
-      <Button onclick={() => {
-        if (editModalContent && editModalFlight) {
-          console.log("IN BTN")
-          console.log(editModalContent)
-          console.log(editModalFlight)
-          editFlight(editModalFlight, editModalContent)
-        }
-      }}><FloppyDiskOutline class="w-5 h-5 me-2" /> Save Changes</Button>  
-    </form>
-  {/if}
-  
-</Modal>
