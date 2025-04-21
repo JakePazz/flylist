@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Tflight } from '$lib/types/flight';
-  import { Label, Input, Button, Toast } from 'flowbite-svelte';
+  import { Label, Input, Button, Toast, Helper } from 'flowbite-svelte';
   import { CheckOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
   import { FlyListDB } from '$lib/db/database';
   import { fly } from 'svelte/transition';
@@ -86,6 +86,7 @@
       <span class="flex-4">
         <Label>Aircraft Type</Label>
         <Input id="ac-type" placeholder="A320" bind:value={flightInputs.ac_type}/>
+        <Helper class="text-sm mt-1">Update your available aircrafts in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
       </span>
 
       

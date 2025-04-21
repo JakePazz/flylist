@@ -40,7 +40,7 @@
 
     if (!doToast) return
 
-    toast.addToast({
+    await toast.addToast({
       title: "Archived Refreshed",
       type: "info"
     })
@@ -101,12 +101,12 @@
 
       await refreshFlights(false)
 
-      toast.addToast({
+      await toast.addToast({
         title: `Restored Flight`,
         type: "success"
       })
     } catch (error) {
-      toast.addToast({
+      await toast.addToast({
         title: `Failed to restore flight`,
         type: "error"
       })
@@ -121,14 +121,14 @@
 
 {#if flights.length > 0}
   {#key currentPageFlights}
-    <Table items={currentPageFlights} divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
+    <Table items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
       <TableHead>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.id - b.id} defaultDirection="asc">ID</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.dep_airport.localeCompare(b.route.dep_airport)}>DEP</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.arr_airport.localeCompare(b.route.arr_airport)}>ARR</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.fl_no.localeCompare(b.company.fl_no)}>FL NO.</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.callsign.localeCompare(b.company.callsign)}>CALLSIGN</TableHeadCell>
-        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.localeCompare(b.ac_type)}>AIRFRAME</TableHeadCell>
+        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.name.localeCompare(b.ac_type.name)}>AIRCRAFT</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.duration - b.duration }>DURATION</TableHeadCell>
         <TableHeadCell></TableHeadCell>
       </TableHead>
@@ -139,7 +139,7 @@
           <TableBodyCell>{item.route.arr_airport}</TableBodyCell>
           <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={() => { open(`https://www.flightradar24.com/data/flights/${item.company.fl_no}`) }} color="alternative"  >{item.company.fl_no}</Button> </TableBodyCell>
           <TableBodyCell>{item.company.callsign}</TableBodyCell>
-          <TableBodyCell>{item.ac_type}</TableBodyCell>
+          <TableBodyCell>{item.ac_type.name}</TableBodyCell>
           <TableBodyCell>{convertMinutes(item.duration)}</TableBodyCell>
           <TableBodyCell>
             <Button aria-label="Archive Flight" onclick={() => {archiveFlight(item)}} size="sm" color="alternative" class="py-1.5 px-2"> <ArchiveArrowDownOutline /></Button>

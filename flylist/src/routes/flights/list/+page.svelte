@@ -8,15 +8,24 @@
   import { getToast } from "$lib/stores/toast.svelte";
   import { convertMinutes } from "$lib/functions/formatDuration";
   import { formatDate } from "$lib/functions/formatDate";
+  import { load } from "@tauri-apps/plugin-store";
+  import type { Tpreferences } from "$lib/types/preferences";
+  import type { NumericRange } from "@sveltejs/kit";
   
   let flights: Tflight[] = $state([])
   let currentPageFlights: Tflight[] = $state([])
   let pages: { name: string, active: boolean }[] = $state([])
+  let tableRowCount: number = $state(10)
   
   const toast = getToast()
 
   onMount(async () => {
     await refreshFlights(false)
+
+    // Get preferences for toast duration before autohide
+    const settings = await load("settings.json");
+    const preferences = await settings.get<Tpreferences>("preferences");
+    tableRowCount = preferences?.table_row_count || 10
   })
 
   async function loadData() {
@@ -25,7 +34,7 @@
 
     pages = []
 
-    const pageCount = Math.ceil(flights.length / 10)
+    const pageCount = Math.ceil(flights.length / tableRowCount)
 
     for (let i = 0; i < pageCount; i++) {
       pages.push({ name: String(i + 1), active: false })
@@ -36,27 +45,27 @@
 
   async function refreshFlights(doToast=true) {
     await loadData()
-    loadPage()
+    await loadPage()
 
     if (!doToast) return
 
-    toast.addToast({
+    await toast.addToast({
       title: "Flights Refreshed",
       type: "info"
     })
   }
 
   // Pagination
-  function loadPage() {
+  async function loadPage() {
     const selectedPage = pages.find((page) => page.active === true)
 
-    const start = (Number(selectedPage?.name) * 10) - 10
-    const end = (Number(selectedPage?.name) * 10)
+    const start = (Number(selectedPage?.name) * tableRowCount) - tableRowCount
+    const end = (Number(selectedPage?.name) * tableRowCount)
 
     currentPageFlights = flights.slice(start, end)
   }
 
-  const previous = () => {
+  const previous = async () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
     if (pageIndex <= 0) {
@@ -66,10 +75,10 @@
     pages[pageIndex].active = false
     pages[pageIndex - 1].active = true
 
-    loadPage()
+    await loadPage()
   };
 
-  const next = () => {
+  const next = async () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
     if (pageIndex >= pages.length - 1) {
@@ -79,10 +88,10 @@
     pages[pageIndex].active = false
     pages[pageIndex + 1].active = true
 
-    loadPage()
+    await loadPage()
   };
 
-  const pageClick = (page: number) => {
+  const pageClick = async (page: number) => {
     
     // Set all pages to inactive
     pages.forEach((_, i) => {
@@ -92,24 +101,22 @@
     // Set selected page to active
     pages[page - 1].active = true
 
-    loadPage()
+    await loadPage()
   }
 
   // Menu Options
   async function editFlight(flight: Tflight, updated: Tflight) {
-    console.log($state.snapshot(flight))
-    console.log($state.snapshot(updated))
 
     try {
       const result = await FlyListDB.editFlight(flight, updated)
 
       if (result) {
-        toast.addToast({
+        await toast.addToast({
           title: `Saved Changes to #${flight.id}`,
           type: "success"
         })
       } else {
-        toast.addToast({
+        await toast.addToast({
           title: `Failed to save changes to #${flight.id}`,
           type: "error"
         })
@@ -145,12 +152,12 @@
 
       await refreshFlights(false)
 
-      toast.addToast({
+      await toast.addToast({
         title: `Flight deleted`,
         type: "success"
       })
     } catch (error) {
-      toast.addToast({
+      await toast.addToast({
         title: `Failed to delete flight`,
         type: "error"
       })
@@ -163,12 +170,12 @@
 
       await refreshFlights(false)
 
-      toast.addToast({
+      await toast.addToast({
         title: `Flight Archived`,
         type: "success"
       })
     } catch (error) {
-      toast.addToast({
+      await toast.addToast({
         title: `Failed to archive flight`,
         type: "error"
       })
@@ -191,14 +198,14 @@
 
 {#if flights.length > 0}
   {#key currentPageFlights}
-    <Table items={currentPageFlights} divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
+    <Table items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
       <TableHead>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.id - b.id} defaultDirection="asc">ID</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.dep_airport.localeCompare(b.route.dep_airport)}>DEP</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.arr_airport.localeCompare(b.route.arr_airport)}>ARR</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.fl_no.localeCompare(b.company.fl_no)}>FL NO.</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.callsign.localeCompare(b.company.callsign)}>CALLSIGN</TableHeadCell>
-        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.localeCompare(b.ac_type)}>AIRFRAME</TableHeadCell>
+        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.name.localeCompare(b.ac_type.name)}>AIRCRAFT</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.duration - b.duration }>DURATION</TableHeadCell>
         <TableHeadCell>ACTIONS</TableHeadCell>
       </TableHead>
@@ -209,7 +216,7 @@
           <TableBodyCell>{item.route.arr_airport}</TableBodyCell>
           <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={() => { open(`https://www.flightradar24.com/data/flights/${item.company.fl_no}`) }} color="alternative"  >{item.company.fl_no}</Button> </TableBodyCell>
           <TableBodyCell>{item.company.callsign}</TableBodyCell>
-          <TableBodyCell>{item.ac_type}</TableBodyCell>
+          <TableBodyCell>{item.ac_type.name}</TableBodyCell>
           <TableBodyCell>{convertMinutes(item.duration)}</TableBodyCell>
           <TableBodyCell>
             <DotsHorizontalOutline class="dots-menu-{item.id} dark:text-white" />
@@ -220,10 +227,10 @@
                 <span class="text-sm text-gray-400 italic flex items-center justify-between">Created At <CirclePlusOutline class="w-4 h-4" /></span>
                 <span>{formatDate(new Date(item.created_at))}</span>
               </div>
-              <DropdownItem onclick={() => {openEditModal(item)}} class="flex gap-2"> <EditOutline /> Edit</DropdownItem>
-              <DropdownItem onclick={() => {archiveFlight(item)}} class="flex gap-2"> <ArchiveOutline/> Archive</DropdownItem>
+              <DropdownItem onclick={async () => {await openEditModal(item)}} class="flex gap-2"> <EditOutline /> Edit</DropdownItem>
+              <DropdownItem onclick={async () => {await archiveFlight(item)}} class="flex gap-2"> <ArchiveOutline/> Archive</DropdownItem>
               <DropdownDivider />
-              <DropdownItem onclick={() => {deleteFlight(item)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
+              <DropdownItem onclick={async () => {await deleteFlight(item)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
             </Dropdown>
           </TableBodyCell>
         </TableBodyRow>

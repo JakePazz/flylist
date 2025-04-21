@@ -6,6 +6,8 @@
   import { ArchiveOutline, CheckOutline, CodeOutline, CogOutline, GridOutline, InfoCircleOutline, ListOutline, PlusOutline } from 'flowbite-svelte-icons';
   import { FlyListDB } from "$lib/db/database";
   import { fly } from "svelte/transition";
+  import { load } from "@tauri-apps/plugin-store";
+  import { type Tpreferences } from "$lib/types/preferences";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
   let site = {
@@ -32,17 +34,26 @@
 
   let toast = getToast()
 
+
   // Register a callback to listen for toast changes
-  toast.registerCallback((value) => {
+  toast.registerCallback(async (value) => {
     if (value) {
       toastMessage = value.title;
       toastType = value.type;
       showToast = true;
-      
-      // Automatically hide the toast after 5 seconds
+
+
+      // Get preferences for toast duration before autohide
+      const settings = await load("settings.json");
+      const preferences = await settings.get<Tpreferences>("preferences");
+
+      let infoSuccessDuration = preferences?.info_success_duration || 1500;
+      let errorDuration = preferences?.error_duration || 5000;
+
+      // Automatically hide the toast after its duration
       setTimeout(() => {
         showToast = false;
-      }, value.type !== "error" ? 1500 : 5000); // info & success 1.5s, error 5s
+      }, value.type !== "error" ? infoSuccessDuration : errorDuration);
     }
   });
 
@@ -94,7 +105,7 @@
 
       <SidebarGroup border>
 
-        <SidebarItem label="Archive" {spanClass} href="/flights/list">
+        <SidebarItem label="Archive" {spanClass} href="/flights/archive">
           <svelte:fragment slot="icon">
             <ArchiveOutline class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
           </svelte:fragment>

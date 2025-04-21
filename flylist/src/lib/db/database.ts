@@ -1,5 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 import type { Tflight } from "../types/flight";
+import type { Taircraft } from "$lib/types/aircraft";
 
 type TdbFlight = {
   id: number,
@@ -18,8 +19,6 @@ export class FlyListDB {
   
 
   static async createFlight(data: Tflight): Promise<string> {
-    console.log(this.createFlight)
-
     try {
       const db = await Database.load("sqlite:flylist.db")
 
@@ -28,7 +27,7 @@ export class FlyListDB {
         data.route.arr_airport,
         data.company.fl_no,
         data.company.callsign,
-        data.ac_type,
+        data.ac_type.id,
         data.duration
       ])
 
@@ -46,10 +45,13 @@ export class FlyListDB {
 
       const dbFlights = await db.select<TdbFlight[]>("SELECT * FROM flights")
 
-      const flights: Tflight[] = dbFlights.map((flight) => {
+      const flights: Tflight[] = await Promise.all(dbFlights.map(async (flight) => {
+
+        const aircraft = await db.select<Taircraft[]>("SELECT * FROM aircraft WHERE id = $1", [ flight.ac_type])
+
         return {
           id: flight.id,
-          ac_type: flight.ac_type,
+          ac_type: aircraft[0],
           company: {
             callsign: flight.callsign,
             fl_no: flight.flight_num,
@@ -63,7 +65,7 @@ export class FlyListDB {
           last_edited: flight.last_edited,
           archived: flight.archived == 1 ? true : false, // Converts from 0 | 1 to boolean
         }
-      })
+      }))
 
       await db.close()
       return flights
@@ -130,15 +132,63 @@ export class FlyListDB {
       await db.close()
       return true
     } catch (error) {
-      console.log("DB Error")
-      console.log(error)
       throw new Error(`Error when archiving flight with id of '${updatedFlight.id}': ${error}`)
+    }
+  }
+
+  static async createAircraft(aircraft: Taircraft): Promise<boolean> {
+    try {
+      const db = await Database.load("sqlite:flylist.db")
+
+      // Check for required fields
+      if (!aircraft.name || !aircraft.icao_code || !aircraft.manufacturer || !aircraft.model) {
+        return false;
+      }
+
+      await db.execute("INSERT INTO aircraft (name, model, manufacturer, icao_code) VALUES ($1, $2, $3, $4)", [
+        aircraft.name,
+        aircraft.model,
+        aircraft.manufacturer,
+        aircraft.icao_code
+      ]);
+
+      await db.close()
+      return true
+    } catch (error) {
+      throw new Error(`Error when creating aircraft: ${error}`)
+    }
+  }
+
+  static async getAircraft(): Promise<Taircraft[]> {
+    try {
+      const db = await Database.load("sqlite:flylist.db")
+      const aircraft = await db.select<Taircraft[]>("SELECT * FROM aircraft")
+
+      await db.close()
+      return aircraft
+    } catch (error) {
+      throw new Error(`Error when creating aircraft: ${error}`)
+    }
+  }
+
+  static async deleteAircraft(aircraft: Taircraft): Promise<boolean> {
+    try {
+      const db = await Database.load("sqlite:flylist.db")
+
+      await db.execute("DELETE FROM aircraft WHERE id = $1", [aircraft.id])
+
+      // TODO: Make this also delete any flights using this aircraft
+
+      await db.close()
+      return true
+    } catch (error) {
+      throw new Error(`Error when deleting aircraft: ${error}`)
     }
   }
 
   private static toDbFlight(flight: Tflight): TdbFlight {
     return {
-      ac_type: flight.ac_type,
+      ac_type: String(flight.ac_type.id),
       archived: flight.archived ? 1 : 0,
       arr_airport: flight.route.arr_airport,
       dep_airport: flight.route.dep_airport,
@@ -150,7 +200,5 @@ export class FlyListDB {
       last_edited: flight.last_edited,
     }
   }
-
-
 
 }

@@ -1,3 +1,5 @@
+import type { Taircraft } from "./aircraft";
+
 export type Tflight = {
   id: number,
   route: {
@@ -8,7 +10,7 @@ export type Tflight = {
     fl_no: string,
     callsign: string,
   },
-  ac_type: string,
+  ac_type: Taircraft,
   duration: number, // Minutes
   archived: boolean,
   last_edited: Date,
