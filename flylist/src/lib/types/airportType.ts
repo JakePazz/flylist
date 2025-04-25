@@ -1,0 +1,1 @@
+export type TairportType = "balloonport" | "closed_airport" | "heliport" | "large_airport" | "medium_airport" | "seaplane_base" | "small_airport"

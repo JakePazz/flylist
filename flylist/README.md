@@ -24,6 +24,7 @@ A small tauri/SvelteKit application to track your wishlist of virtual flights
 - [ ] Add airport weather fetching and formatting (<https://aviationweather.gov/api/data/metar?ids=EGLL&format=json>)
 - [ ] Add confirm modal to delete action in /flights/list
 - [X] Update flight list to populate aircraft with the column storing the id of the aircraft and show name
+- [ ] Improve documentation
 
 ### Settings
 

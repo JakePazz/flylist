@@ -1,6 +1,8 @@
 import Database from "@tauri-apps/plugin-sql";
 import type { Tflight } from "../types/flight";
 import type { Taircraft } from "$lib/types/aircraft";
+import type { Tairport } from "$lib/types/airport";
+import type { Tairline } from "$lib/types/airline";
 
 type TdbFlight = {
   id: number,
@@ -38,7 +40,7 @@ export class FlyListDB {
     }
   }
 
-  static async readFlight(): Promise<Tflight[]> {
+  static async getFlights(): Promise<Tflight[]> {
 
     try {
       const db = await Database.load("sqlite:flylist.db")
@@ -183,6 +185,95 @@ export class FlyListDB {
       return true
     } catch (error) {
       throw new Error(`Error when deleting aircraft: ${error}`)
+    }
+  }
+
+
+  static async createAirports(airports: Tairport[]): Promise<void> {
+    try {
+      const db = await Database.load("sqlite:flylist.db");
+  
+      const query = `
+        INSERT INTO airports (id, type, name, latitude_deg, longitude_deg, elevation_ft, continent, iso_country, iso_region, icao_code, iata_code, home_link)
+        VALUES ${airports.map((_, i) => `($${i * 12 + 1}, $${i * 12 + 2}, $${i * 12 + 3}, $${i * 12 + 4}, $${i * 12 + 5}, $${i * 12 + 6}, $${i * 12 + 7}, $${i * 12 + 8}, $${i * 12 + 9}, $${i * 12 + 10}, $${i * 12 + 11}, $${i * 12 + 12})`).join(", ")}
+      `;
+  
+      const params = airports.flatMap(airport => [
+        airport.id,
+        airport.type,
+        airport.name,
+        airport.latitude_deg,
+        airport.longitude_deg,
+        airport.elevation_ft,
+        airport.continent,
+        airport.iso_country,
+        airport.iso_region,
+        airport.icao_code,
+        airport.iata_code,
+        airport.home_link,
+      ]);
+  
+      await db.execute(query, params);
+      await db.close();
+    } catch (error) {
+      throw new Error(`Error inserting batch of airports: ${error}`);
+    }
+  }
+
+  static async getAirport(icao?: string, iata?: string): Promise<Tairport> {
+    try {
+      const db = await Database.load("sqlite:flylist.db")
+      
+      let query = "";
+      let params: string[] = [];
+  
+      if (icao) {
+        query = "SELECT * FROM airports WHERE icao_code = $1";
+        params = [icao];
+      } else if (iata) {
+        query = "SELECT * FROM airports WHERE iata_code = $1";
+        params = [iata];
+      } else {
+        throw new Error("Either ICAO or IATA code must be provided.");
+      }
+  
+      const result = await db.select<Tairport[]>(query, params);
+
+      if (result.length > 1) {
+        throw new Error("Found more than one airport with this icao/iata code")
+      }
+
+      await db.close()
+      return result[0]
+    } catch (error) {
+      throw new Error(`Error when creating table: ${error}`)
+    }
+  }
+
+  static async createAirlines(airlines: Tairline[]): Promise<void> {
+    try {
+      const db = await Database.load("sqlite:flylist.db");
+  
+      const query = `
+        INSERT INTO airlines (id, name, alias, iata, icao, callsign, country, active)
+        VALUES ${airlines.map((_, i) => `($${i * 8 + 1}, $${i * 8 + 2}, $${i * 8 + 3}, $${i * 8 + 4}, $${i * 8 + 5}, $${i * 8 + 6}, $${i * 8 + 7}, $${i * 8 + 8})`).join(", ")}
+      `;
+  
+      const params = airlines.flatMap(airline => [
+        airline.id,
+        airline.name,
+        airline.alias,
+        airline.iata,
+        airline.icao,
+        airline.callsign,
+        airline.country,
+        airline.active ? 1 : 0, // Convert boolean to integer for SQLite
+      ]);
+  
+      await db.execute(query, params);
+      await db.close();
+    } catch (error) {
+      throw new Error(`Error inserting batch of airlines: ${error}`);
     }
   }
 

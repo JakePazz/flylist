@@ -1,11 +1,10 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri_plugin_sql::{Migration, MigrationKind};
 use tauri_plugin_shell;
+use tauri_plugin_sql::{Migration, MigrationKind};
 use tauri_plugin_store;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-
     let migrations = vec![
         Migration {
             version: 1,
@@ -37,14 +36,48 @@ pub fn run() {
             )",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "create airports table",
+            sql: "CREATE TABLE IF NOT EXISTS airports (
+                id INTEGER PRIMARY KEY NOT NULL,
+                type TEXT NOT NULL,
+                name TEXT NOT NULL,
+                latitude_deg REAL NOT NULL,
+                longitude_deg REAL NOT NULL,
+                elevation_ft INTEGER,
+                continent TEXT NOT NULL,
+                iso_country TEXT NOT NULL,
+                iso_region TEXT NOT NULL,
+                icao_code TEXT,
+                iata_code TEXT,
+                home_link TEXT
+            )",
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "create airlines table",
+            sql: "CREATE TABLE IF NOT EXISTS airlines (
+                id INTEGER PRIMARY KEY NOT NULL,
+                name STRING NOT NULL,
+                alias STRING,
+                iata STRING,
+                icao STRING NOT NULL,
+                callsign STRING NOT NULL,
+                country STRING NOT NULL,
+                active BOOLEAN NOT NULL
+            )",
+            kind: MigrationKind::Up,
+        }
     ];
 
-
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .plugin(
             tauri_plugin_sql::Builder::default()
                 .add_migrations("sqlite:flylist.db", migrations)
-                .build()
+                .build(),
         )
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
@@ -52,4 +85,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

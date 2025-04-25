@@ -6,7 +6,9 @@
     "main"
   ],
   "remote": {
-    "urls": ["https://*"]
+    "urls": [
+      "https://*"
+    ]
   },
   "permissions": [
     "core:default",
@@ -17,6 +19,7 @@
     "sql:allow-select",
     "sql:allow-close",
     "shell:allow-open",
-    "store:default"
+    "store:default",
+    "process:default"
   ]
 }

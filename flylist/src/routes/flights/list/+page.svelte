@@ -29,7 +29,7 @@
   })
 
   async function loadData() {
-    flights = await FlyListDB.readFlight()
+    flights = await FlyListDB.getFlights()
     flights = flights.filter((flight) => flight.archived !== true)
 
     pages = []
@@ -40,7 +40,10 @@
       pages.push({ name: String(i + 1), active: false })
     }
 
-    pages[0].active = true
+    if (pages.length > 0) {
+      pages[0].active = true
+    }
+
   }
 
   async function refreshFlights(doToast=true) {
@@ -198,7 +201,7 @@
 
 {#if flights.length > 0}
   {#key currentPageFlights}
-    <Table items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
+    <Table  items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
       <TableHead>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.id - b.id} defaultDirection="asc">ID</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.dep_airport.localeCompare(b.route.dep_airport)}>DEP</TableHeadCell>

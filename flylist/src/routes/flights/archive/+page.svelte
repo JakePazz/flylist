@@ -20,7 +20,7 @@
   })
 
   async function loadData() {
-    flights = await FlyListDB.readFlight()
+    flights = await FlyListDB.getFlights()
     flights = flights.filter((flight) => flight.archived === true)
 
     pages = []

@@ -2,12 +2,13 @@
   import { getToast } from "$lib/stores/toast.svelte";
   import { onMount } from "svelte";
   import "../app.css"
-  import { Sidebar, SidebarWrapper, SidebarBrand, SidebarItem, SidebarGroup, Toast, Button } from 'flowbite-svelte';
+  import { Sidebar, SidebarWrapper, SidebarBrand, SidebarItem, SidebarGroup, Toast, Button, Spinner } from 'flowbite-svelte';
   import { ArchiveOutline, CheckOutline, CodeOutline, CogOutline, GridOutline, InfoCircleOutline, ListOutline, PlusOutline } from 'flowbite-svelte-icons';
   import { FlyListDB } from "$lib/db/database";
   import { fly } from "svelte/transition";
   import { load } from "@tauri-apps/plugin-store";
   import { type Tpreferences } from "$lib/types/preferences";
+  import { goto } from "$app/navigation";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
   let site = {
@@ -16,14 +17,43 @@
     img: '/logo.svg'
   };
 
-  let flightCount = $state(10);
+  let flightCount = $state(10)
+  let disableSidebar = $state(true)
+  let layoutReady = $state(false)
 
   onMount(async () => {
-    const flights = await FlyListDB.readFlight()
-    const activeFlights = flights.filter((flight) => flight.archived === false)
+    try {
 
-    if (activeFlights.length > 0) {
-      flightCount = activeFlights.length
+      await new Promise(resolve => setTimeout(resolve, 500)) // Wait for tauri load
+
+      if (window.location.pathname === "/setup") {
+        layoutReady = true
+        return
+      }
+
+      // Check if setup is complete
+      const settings = await load("settings.json")
+      const complete = await settings.get<boolean>("setup_complete")
+      
+      if (!complete) {
+        await goto('/setup')
+      } else {
+        // Load flight count and other data only if setup is complete
+        const flights = await FlyListDB.getFlights()
+        const activeFlights = flights.filter((flight) => flight.archived === false)
+        
+        if (activeFlights.length > 0) {
+          flightCount = activeFlights.length
+        }
+
+        disableSidebar = false
+      }
+
+    } catch (error) {
+      console.error("Error checking setup status, forcing /setup:", error)
+      await goto('/setup')
+    } finally {
+      layoutReady = true
     }
   })
 
@@ -58,20 +88,23 @@
   });
 
   const { children } = $props();
-
-  // function toggleToast() {
-  //   showToast = toast ? true : false
-
-  //   console.log($state.snapshot(toast.value))
-  // }
-
 </script>
 
+{#if !layoutReady}
+  <div class="w-screen h-screen flex items-center justify-center bg-gray-900">
+    <div class="text-center">
+      <Spinner size={12} />
+      <p class="mt-4 text-gray-300">Loading FlyList...</p>
+    </div>
+  </div>
+{:else}
 <main class="w-screen h-screen flex ">
 
   <!-- Sidebar -->
 
-  <Sidebar asideClass="w-56 !h-full">
+  <Sidebar
+    asideClass={`w-56 !h-full ${disableSidebar ? "pointer-events-none opacity-40 select-none" : ""}`}
+  >
     <SidebarWrapper divClass="overflow-y-auto py-4 px-3 bg-gray-50 rounded-sm dark:bg-gray-800 h-full flex flex-col">
       <SidebarGroup>
         <SidebarBrand {site} />
@@ -125,6 +158,7 @@
     {@render children()}
   </div>
 </main>
+{/if}
 
 <Toast
 toastStatus={showToast}
