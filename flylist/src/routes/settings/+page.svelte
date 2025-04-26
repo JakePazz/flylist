@@ -21,6 +21,7 @@
   let aircraft = $state<Taircraft[]>([])
 
   let newAircraft = $state<Taircraft>({
+    id: 0,
     icao_code: "",
     manufacturer: "",
     model: "",
@@ -276,9 +277,7 @@
             <TableHeadCell>CREATED AT</TableHeadCell>
             <TableHeadCell></TableHeadCell>
           </TableHead>
-
           
-
           {#if aircraft.length > 0}
             <TableBody tableBodyClass="divide-y">
               <TableBodyRow slot="row" let:item>

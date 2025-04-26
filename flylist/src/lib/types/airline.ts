@@ -4,7 +4,7 @@ export type Tairline = {
   alias?: string,
   iata?: string,
   icao: string,
-  callsign: string,
+  callsign?: string,
   country: string,
   active: boolean,
 }

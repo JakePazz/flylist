@@ -1,15 +1,27 @@
 <script lang="ts">
   import type { Tflight } from '$lib/types/flight';
-  import { Label, Input, Button, Toast, Helper } from 'flowbite-svelte';
-  import { CheckOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
+  import { Label, Input, Button, Toast, Helper, Dropdown, Radio } from 'flowbite-svelte';
+  import { CheckOutline, ChevronDownOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
   import { FlyListDB } from '$lib/db/database';
   import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
+  import type { Taircraft } from '$lib/types/aircraft';
+  import { getToast } from '$lib/stores/toast.svelte';
 
-  const flightInputs: Tflight = $state({
-    ac_type: "",
+  let aircrafts: Taircraft[] = $state([])
+  let flightInputs: Tflight | undefined = $state({
+    aircraft: { // Replaced in effect with index 0 in `aircrafts`
+      icao_code: "",
+      manufacturer: "",
+      model: "",
+      name: "",
+      created_at: new Date(),
+      id: 0,
+    },
     company: {
       callsign: "",
       fl_no: "",
+      airline_icao: "",
     },
     duration: 0,
     route: {
@@ -22,29 +34,107 @@
     last_edited: new Date(),
   })
 
+  
+  const toast = getToast()
+
+  onMount(async () => {
+    // Get aircraft and default dropdown to first one in array
+    aircrafts = await FlyListDB.getAircraft()
+    flightInputs.aircraft = aircrafts[0]
+
+  })
+
+
+
   let hoursInput: number = $state(0)
   let minutesInput: number = $state(0)
-  let showSuccessToast: boolean = $state(false)
 
   $effect(() => {
-    flightInputs.duration = (hoursInput * 60) + minutesInput
+    if (flightInputs) {
+      flightInputs.duration = (hoursInput * 60) + minutesInput
+    }
   })
 
   async function createFlight() {
     try {
-      await FlyListDB.createFlight(flightInputs)
+      if (!flightInputs) return
 
-      showSuccessToast = true
+      // Departure Airport valid (found in airports table)
+      const depAirport = await FlyListDB.getAirport(flightInputs.route.dep_airport)
+      if (!depAirport) {
+        toast.addToast({
+          title: "Departure airport invalid",
+          type: "error"
+        })
+        return
+      }
 
-      // Close toast after 3 seconds
-      setTimeout(() => {
-        showSuccessToast = false
-      }, 3000)
+      // Arrival Airport valid (found in airports table)
+      const arrAirport = await FlyListDB.getAirport(flightInputs.route.arr_airport)
+      if (!arrAirport) {
+        toast.addToast({
+          title: "Arrival airport invalid",
+          type: "error"
+        })
+        return
+      }
+
+      const airline = await FlyListDB.getAirline(flightInputs.company.airline_icao)
+      if (!airline) {
+        toast.addToast({
+          title: "Airline ICAO invalid",
+          type: "error"
+        })
+        return
+      }
+
+      console.log(airline)
+
+      // Duration is a positive value
+      if (flightInputs.duration <= 0) {
+        toast.addToast({
+          title: "Duration invalid",
+          type: "error"
+        })
+        return
+      }
+
+      if (!flightInputs.company.fl_no) {
+        toast.addToast({
+          title: "Flight number required",
+          type: "error"
+        })
+        return
+      }
+
+      // Defaults callsign to the flight no. if no value entered
+      if (!flightInputs.company.callsign) {
+        flightInputs.company.callsign = flightInputs.company.fl_no
+      }
+
+      console.log($state.snapshot(flightInputs))
+      
+      // await FlyListDB.createFlight(flightInputs)
+
+      toast.addToast({
+        title: "Created new flight",
+        type: "success"
+      })
 
     } catch (error) {
       console.error(error)
     }
   }
+
+  let aircraftGroup = $state(1);
+
+  // Update aircraft based upon dropdown changes `aircraftGroup`
+  $effect(() => { 
+    const ac = aircrafts.find((ac) => ac.id === aircraftGroup)
+    if (!ac) return
+
+    flightInputs.aircraft = ac
+  })
 
 </script>
 
@@ -70,23 +160,44 @@
       </span>
     </div>
 
-    <div class="flex gap-6">
-      <span class="flex-1">
-        <Label>Flight Number</Label>
-        <Input id="flight-no" placeholder="BA123" bind:value={flightInputs.company.fl_no}/>
-      </span>
+    <div class="flex-col gap-1">
       
-      <span class="flex-1">
-        <Label>Callsign</Label>
-        <Input id="callsign" placeholder="BAW456" bind:value={flightInputs.company.callsign}/>
+      <span class="flex gap-6">
+        <span class="flex-2">
+          <Label>Airline</Label>
+          <Input class="flex-1" id="flight-no-airline" placeholder="BAW" bind:value={flightInputs.company.airline_icao}/>
+        </span>
+
+        <span class="flex-3">
+          <Label>Flight Number</Label>
+          <Input class="flex-2" id="flight-no" placeholder={`123`} bind:value={flightInputs.company.fl_no}/>
+        </span>
+        
+        <span class="flex-3">
+          <Label>Callsign</Label>
+          <Input id="callsign" placeholder="BAW456" bind:value={flightInputs.company.callsign}/>
+        </span>
       </span>
+      <Helper class="text-sm mt-1">Find an airline's ICAO code <a href="https://www.avcodes.co.uk/airlcodesearch.asp" target="_blank" class="font-medium text-primary-600 hover:underline dark:text-primary-500">here</a></Helper>
     </div>
 
     <div class="flex gap-6 ">
       <span class="flex-4">
         <Label>Aircraft Type</Label>
-        <Input id="ac-type" placeholder="A320" bind:value={flightInputs.ac_type}/>
-        <Helper class="text-sm mt-1">Update your available aircrafts in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
+        {#key aircraftGroup}
+          <Button color="alternative" class="w-max">
+            {aircrafts.find((ac) => ac.id === aircraftGroup)?.name} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+          </Button>
+          <Dropdown class="w-44 p-3 space-y-3 text-sm">
+            {#each aircrafts as aircraft}
+            <li class="rounded-sm p-2 hover:bg-gray-100 dark:hover:bg-gray-600">
+              <Radio name="Aircraft Type" bind:group={aircraftGroup} value={aircraft.id}>{aircraft.name}</Radio>
+            </li>
+            {/each}
+          </Dropdown>
+        {/key}
+        
+        <Helper class="text-sm mt-1">Update your available aircraft in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
       </span>
 
       
@@ -105,9 +216,3 @@
 
   </form>
 </span>
-
-{#if showSuccessToast}
-  <Toast transition={fly} params={{ x: 200 }} color="green" class="mb-4 rounded-lg" position="bottom-right" dismissable={false}>
-    <CheckOutline slot="icon" class="w-6 h-6" /> Created New Flight
-  </Toast>
-{/if}

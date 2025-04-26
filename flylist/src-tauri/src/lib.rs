@@ -15,7 +15,8 @@ pub fn run() {
                 arr_airport TEXT NOT NULL,
                 flight_num TEXT NOT NULL,
                 callsign TEXT NOT NULL,
-                ac_type TEXT NOT NULL,
+                airline_icao TEXT NOT NULL,
+                aircraft INTEGER NOT NULL,
                 duration INTEGER NOT NULL,
                 archived BOOLEAN DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -64,7 +65,7 @@ pub fn run() {
                 alias STRING,
                 iata STRING,
                 icao STRING NOT NULL,
-                callsign STRING NOT NULL,
+                callsign STRING,
                 country STRING NOT NULL,
                 active BOOLEAN NOT NULL
             )",

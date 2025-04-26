@@ -8,6 +8,7 @@
   import { getToast } from "$lib/stores/toast.svelte";
   import { convertMinutes } from "$lib/functions/formatDuration";
   import { formatDate } from "$lib/functions/formatDate";
+  import { openFlightradar } from "$lib/functions/openFlightradar";
 
   let flights: Tflight[] = $state([])
   let currentPageFlights: Tflight[] = $state([])
@@ -128,7 +129,7 @@
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.route.arr_airport.localeCompare(b.route.arr_airport)}>ARR</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.fl_no.localeCompare(b.company.fl_no)}>FL NO.</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.company.callsign.localeCompare(b.company.callsign)}>CALLSIGN</TableHeadCell>
-        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.ac_type.name.localeCompare(b.ac_type.name)}>AIRCRAFT</TableHeadCell>
+        <TableHeadCell sort={(a: Tflight, b: Tflight) => a.aircraft.name.localeCompare(b.aircraft.name)}>AIRCRAFT</TableHeadCell>
         <TableHeadCell sort={(a: Tflight, b: Tflight) => a.duration - b.duration }>DURATION</TableHeadCell>
         <TableHeadCell></TableHeadCell>
       </TableHead>
@@ -137,9 +138,9 @@
           <TableBodyCell><span class="text-gray-400 italic">{item.id}</span></TableBodyCell>
           <TableBodyCell>{item.route.dep_airport}</TableBodyCell>
           <TableBodyCell>{item.route.arr_airport}</TableBodyCell>
-          <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={() => { open(`https://www.flightradar24.com/data/flights/${item.company.fl_no}`) }} color="alternative"  >{item.company.fl_no}</Button> </TableBodyCell>
+          <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={async () => { await openFlightradar(item.company.airline_icao, item.company.fl_no) }} color="alternative"  >{item.company.fl_no}</Button> </TableBodyCell>
           <TableBodyCell>{item.company.callsign}</TableBodyCell>
-          <TableBodyCell>{item.ac_type.name}</TableBodyCell>
+          <TableBodyCell>{item.aircraft.name}</TableBodyCell>
           <TableBodyCell>{convertMinutes(item.duration)}</TableBodyCell>
           <TableBodyCell>
             <Button aria-label="Archive Flight" onclick={() => {archiveFlight(item)}} size="sm" color="alternative" class="py-1.5 px-2"> <ArchiveArrowDownOutline /></Button>

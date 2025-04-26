@@ -19,13 +19,12 @@ export function toAirlineType(data: Record<string, unknown>): Tairline {
   }
 
   // Check required fields
-  if (!icao || icao === "\\N" || !callsign || callsign === "\\N" || !country || country === "\\N") {
-    throw new Error("Missing required fields: icao, callsign, or country");
+  if (!icao || icao === "\\N" || !country || country === "\\N") {
+    throw new Error("Missing required fields: icao or country");
   }
 
   // Handle \N in alias field
   const alias = rawAlias && rawAlias !== "\\N" ? String(rawAlias) : undefined;
-  
 
   return {
     id: Number(id),
@@ -33,7 +32,7 @@ export function toAirlineType(data: Record<string, unknown>): Tairline {
     alias: alias ? String(alias) : undefined,
     iata: iata ? String(iata) : undefined,
     icao: String(icao || ""),
-    callsign: String(callsign || ""),
+    callsign: callsign && callsign !== "\\N" ? String(callsign) : undefined,
     country: String(country || ""),
     active: Boolean(active),
   };

@@ -10,7 +10,8 @@ type TdbFlight = {
   arr_airport: string,
   flight_num: string,
   callsign: string,
-  ac_type: string,
+  airline_icao: string,
+  aircraft_id: number,
   duration: number,
   archived: number,
   created_at: Date,
@@ -24,13 +25,14 @@ export class FlyListDB {
     try {
       const db = await Database.load("sqlite:flylist.db")
 
-      await db.execute("INSERT INTO flights (dep_airport, arr_airport, flight_num, callsign, ac_type, duration) VALUES ($1, $2, $3, $4, $5, $6)", [
+      await db.execute("INSERT INTO flights (dep_airport, arr_airport, flight_num, callsign, aircraft_id, duration, airline_icao) VALUES ($1, $2, $3, $4, $5, $6, $7)", [
         data.route.dep_airport,
         data.route.arr_airport,
         data.company.fl_no,
         data.company.callsign,
-        data.ac_type.id,
-        data.duration
+        data.aircraft.id,
+        data.duration,
+        data.company.airline_icao
       ])
 
       await db.close()
@@ -48,15 +50,18 @@ export class FlyListDB {
       const dbFlights = await db.select<TdbFlight[]>("SELECT * FROM flights")
 
       const flights: Tflight[] = await Promise.all(dbFlights.map(async (flight) => {
-
-        const aircraft = await db.select<Taircraft[]>("SELECT * FROM aircraft WHERE id = $1", [ flight.ac_type])
+        const aircraft = await db.select<Taircraft[]>("SELECT * FROM aircraft WHERE id = $1", [flight.aircraft_id])
+        
+        const airlines = await db.select<Tairline[]>("SELECT * FROM airlines WHERE icao = $1", [flight.airline_icao])
 
         return {
           id: flight.id,
-          ac_type: aircraft[0],
+          aircraft: aircraft[0],
           company: {
             callsign: flight.callsign,
             fl_no: flight.flight_num,
+            airline_icao: flight.airline_icao,
+            airline: airlines ? airlines[0] : undefined,
           },
           duration: flight.duration,
           route: {
@@ -277,12 +282,30 @@ export class FlyListDB {
     }
   }
 
+  static async getAirline(icao: string): Promise<Tairline> {
+    try {
+      const db = await Database.load("sqlite:flylist.db")
+        
+      const result = await db.select<Tairline[]>("SELECT * FROM airlines WHERE icao = $1", [icao]);
+
+      if (result.length > 1) {
+        throw new Error("Found more than one airline with this icao code")
+      }
+
+      await db.close()
+      return result[0]
+    } catch (error) {
+      throw new Error(`Error when creating table: ${error}`)
+    }
+  }
+
   private static toDbFlight(flight: Tflight): TdbFlight {
     return {
-      ac_type: String(flight.ac_type.id),
+      aircraft_id: flight.aircraft.id,
       archived: flight.archived ? 1 : 0,
       arr_airport: flight.route.arr_airport,
       dep_airport: flight.route.dep_airport,
+      airline_icao: flight.company.airline_icao,
       callsign: flight.company.callsign,
       created_at: flight.created_at,
       duration: flight.duration,

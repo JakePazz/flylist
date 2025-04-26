@@ -1,5 +1,5 @@
 export type Taircraft = {
-  id?: number,
+  id: number,
   name: string,
   model: string,
   manufacturer: string,

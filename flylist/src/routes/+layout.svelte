@@ -18,7 +18,7 @@
   };
 
   let flightCount = $state(10)
-  let disableSidebar = $state(true)
+  let disableSidebar = $state(false)
   let layoutReady = $state(false)
 
   onMount(async () => {
@@ -28,6 +28,7 @@
 
       if (window.location.pathname === "/setup") {
         layoutReady = true
+        disableSidebar = true
         return
       }
 
@@ -46,12 +47,10 @@
           flightCount = activeFlights.length
         }
 
-        disableSidebar = false
       }
 
     } catch (error) {
-      console.error("Error checking setup status, forcing /setup:", error)
-      await goto('/setup')
+      console.error("Error onMount() of layout:", error)
     } finally {
       layoutReady = true
     }
