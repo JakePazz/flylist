@@ -4,11 +4,12 @@
   import "../app.css"
   import { Sidebar, SidebarWrapper, SidebarBrand, SidebarItem, SidebarGroup, Toast, Button, Spinner } from 'flowbite-svelte';
   import { ArchiveOutline, CheckOutline, CodeOutline, CogOutline, GridOutline, InfoCircleOutline, ListOutline, PlusOutline } from 'flowbite-svelte-icons';
-  import { FlyListDB } from "$lib/db/database";
+  import { FlyListDB } from "$lib/managers/database";
   import { fly } from "svelte/transition";
   import { load } from "@tauri-apps/plugin-store";
   import { type Tpreferences } from "$lib/types/preferences";
   import { goto } from "$app/navigation";
+  import { MetarManager } from "$lib/managers/metar";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
   let site = {
@@ -22,6 +23,14 @@
   let layoutReady = $state(false)
 
   onMount(async () => {
+
+    // Remove out of date airports in metar_cache.json
+    try {
+      await MetarManager.cleanupCache()
+    } catch (error) {
+      console.warn(`Failed to cleanup 'metar_cache.json' due to an error: ${error}`)
+    }
+
     try {
 
       await new Promise(resolve => setTimeout(resolve, 500)) // Wait for tauri load
@@ -59,10 +68,7 @@
   let showToast = $state(false)
   let toastMessage = $state("")
   let toastType: "info" | "success" | "error" = $state("info")
-
-
   let toast = getToast()
-
 
   // Register a callback to listen for toast changes
   toast.registerCallback(async (value) => {
@@ -97,7 +103,7 @@
     </div>
   </div>
 {:else}
-<main class="w-screen h-screen flex ">
+<main class="w-screen h-screen max-h-screen flex ">
 
   <!-- Sidebar -->
 
@@ -153,7 +159,7 @@
   </Sidebar>
 
   <!-- Page Content -->
-  <div class="px-6 py-4 flex-1 flex flex-col">
+  <div class="px-6 py-4 flex-1 flex flex-col overflow-hidden max-h-[100vh]">
     {@render children()}
   </div>
 </main>

@@ -1,4 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use tauri::command;
 use tauri_plugin_shell;
 use tauri_plugin_sql::{Migration, MigrationKind};
 use tauri_plugin_store;
@@ -70,10 +71,32 @@ pub fn run() {
                 active BOOLEAN NOT NULL
             )",
             kind: MigrationKind::Up,
-        }
+        },
     ];
 
+    #[command]
+    async fn fetch_weather(icao: String, api_key: String) -> Result<String, String> {
+
+        // Build URL with API key in header
+        let client = reqwest::Client::new();
+        let url = format!("https://api.checkwx.com/metar/{}/decoded", icao);
+        
+        match client.get(&url)
+            .header("X-API-Key", api_key)
+            .send()
+            .await {
+                Ok(response) => match response.text().await {
+                    Ok(text) => Ok(text),
+                    Err(e) => Err(format!("CheckWX request failed for {}: {}", icao, e)),
+                },
+                Err(e) => Err(format!("CheckWX request failed for {}: {}", icao, e)),
+            }
+    }
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .invoke_handler(tauri::generate_handler![fetch_weather])
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .plugin(
             tauri_plugin_sql::Builder::default()

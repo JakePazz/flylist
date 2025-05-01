@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { FlyListDB } from "$lib/db/database";
+  import { FlyListDB } from "$lib/managers/database";
   import { formatDate } from "$lib/functions/formatDate";
   import { getToast } from "$lib/stores/toast.svelte";
   import { type Taircraft } from "$lib/types/aircraft";

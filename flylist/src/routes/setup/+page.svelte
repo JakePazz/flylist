@@ -5,7 +5,7 @@
   import { onMount } from "svelte";
   import { exit, relaunch } from '@tauri-apps/plugin-process';
   import Papa from 'papaparse';
-  import { FlyListDB } from "$lib/db/database";
+  import { FlyListDB } from "$lib/managers/database";
   import type { Tairport } from "$lib/types/airport";
   import type { TairportType } from "$lib/types/airportType";
   import { goto } from "$app/navigation";

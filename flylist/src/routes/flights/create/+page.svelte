@@ -2,7 +2,7 @@
   import type { Tflight } from '$lib/types/flight';
   import { Label, Input, Button, Toast, Helper, Dropdown, Radio } from 'flowbite-svelte';
   import { CheckOutline, ChevronDownOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
-  import { FlyListDB } from '$lib/db/database';
+  import { FlyListDB } from '$lib/managers/database';
   import { fly } from 'svelte/transition';
   import { onMount } from 'svelte';
   import type { Taircraft } from '$lib/types/aircraft';

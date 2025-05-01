@@ -1,4 +1,4 @@
-import { FlyListDB } from "$lib/db/database"
+import { FlyListDB } from "$lib/managers/database"
 import { getToast } from "$lib/stores/toast.svelte"
 import { open } from '@tauri-apps/plugin-shell';
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { FlyListDB } from "$lib/db/database";
+  import { FlyListDB } from "$lib/managers/database";
   import type { Tflight } from "$lib/types/flight";
   import { Button, Dropdown, DropdownDivider, DropdownItem, Input, Label, Modal, Pagination, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
   import { ArchiveArrowDownOutline, ArchiveOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FireOutline, FloppyDiskOutline, RefreshOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
   import { open } from '@tauri-apps/plugin-shell';
   import { getToast } from "$lib/stores/toast.svelte";
-  import { convertMinutes } from "$lib/functions/formatDuration";
+  import { formatDuration } from "$lib/functions/formatDuration";
   import { formatDate } from "$lib/functions/formatDate";
   import { openFlightradar } from "$lib/functions/openFlightradar";
 
@@ -141,7 +141,7 @@
           <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={async () => { await openFlightradar(item.company.airline_icao, item.company.fl_no) }} color="alternative"  >{item.company.fl_no}</Button> </TableBodyCell>
           <TableBodyCell>{item.company.callsign}</TableBodyCell>
           <TableBodyCell>{item.aircraft.name}</TableBodyCell>
-          <TableBodyCell>{convertMinutes(item.duration)}</TableBodyCell>
+          <TableBodyCell>{formatDuration(item.duration)}</TableBodyCell>
           <TableBodyCell>
             <Button aria-label="Archive Flight" onclick={() => {archiveFlight(item)}} size="sm" color="alternative" class="py-1.5 px-2"> <ArchiveArrowDownOutline /></Button>
           </TableBodyCell>
