@@ -177,7 +177,6 @@
             <p class="text-gray-200 font-medium">{metar.barometer.hpa}</p>
           </span>
           <Tooltip>Pressure (hPa)</Tooltip>
-          
         </div>
         
         <!-- Flight Category, Visiblity -->
@@ -185,12 +184,11 @@
           <span class="bg-green-500 mx-2 mb-1 text-white font-medium px-3 py-2 rounded-lg ">{metar.flight_category}</span>
           <Tooltip>Flight Category</Tooltip>
           <p id="visibility-numeric">{metar.visibility.meters}</p>
-          <Tooltip triggeredBy="#visibility-numeric" >{metar.visibility.meters_text}m</Tooltip>
+          <Tooltip triggeredBy="#visibility-numeric" >Visibility {metar.visibility.meters_text.toLowerCase()}m</Tooltip>
         </div>
         
-        
         <!-- Clouds -->
-        <div class="flex flex-col justify-between">
+        <div class="flex flex-col justify-center">
           {#if metar.clouds}
             {#each metar.clouds as cloud, index}
               {#if index !== 0}
@@ -283,6 +281,7 @@
           <Button id="force-metar-reload-btn" onclick={() => {forceMetarReload()}} color="alternative" size="sm" class="px-3" > <RefreshOutline /> </Button>
           <Tooltip triggeredBy="#force-metar-reload-btn">Force Reload METAR</Tooltip>
           <Button onclick={() => {copyMetar()}} class="flex gap-1" size="sm" color="alternative"> <ClipboardCleanOutline />Metar</Button>
+          <Tooltip>Copy METAR to Clipboard</Tooltip>
         </span>
       </div>
     {/key}
