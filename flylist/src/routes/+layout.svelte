@@ -11,6 +11,7 @@
   import { goto } from "$app/navigation";
   import { MetarManager } from "$lib/managers/metar";
   import { SettingsManager } from "$lib/managers/settings";
+  import { error } from "@sveltejs/kit";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
   let site = {
@@ -92,7 +93,19 @@
       toastMessage = value.title;
       toastType = value.type;
       showToast = true;
-
+      
+      // Log error as appropriate type
+      switch (toastType) {
+        case "error":
+          console.error(`Error toast: ${toastMessage}`)
+          break
+        case "info":
+          console.info(`Info toast: ${toastMessage}`)
+          break
+        case "success":
+          console.log(`Success toast: ${toastMessage}`)
+          break
+      }
 
       // Get preferences for toast duration before autohide
       const preferences = await SettingsManager.getPreferences()
