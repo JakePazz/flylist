@@ -147,7 +147,7 @@
 
       console.log($state.snapshot(flightInputs))
       
-      // await FlyListDB.createFlight(flightInputs)
+      await FlyListDB.createFlight(flightInputs)
 
       toast.addToast({
         title: "Created new flight",
