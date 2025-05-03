@@ -6,6 +6,7 @@
   import { onMount } from 'svelte';
   import type { Taircraft } from '$lib/types/aircraft';
   import { getToast } from '$lib/stores/toast.svelte';
+  import { goto } from '$app/navigation';
 
   let aircrafts: Taircraft[] = $state([])
   let flightInputs: Tflight | undefined = $state({
@@ -153,6 +154,8 @@
         type: "success"
       })
 
+      goto("/flights/list")
+
     } catch (error) {
       console.error(error)
     }
@@ -218,7 +221,7 @@
           <Label>Aircraft Type</Label>
           {#key aircraftGroup}
             <Button color="alternative" class="w-max">
-              {aircrafts.find((ac) => ac.id === aircraftGroup)?.name} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+              {aircrafts.find((ac) => ac.id === aircraftGroup)?.name || "Select an aircraft"} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
             </Button>
             <Dropdown class="w-44 p-3 space-y-3 text-sm">
               {#each aircrafts as aircraft}
