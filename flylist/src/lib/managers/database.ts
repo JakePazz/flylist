@@ -105,6 +105,10 @@ export class FlyListDB {
   static async editFlight(flight: Tflight, updatedFlight: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
+
+        if (flight.id === updatedFlight.id) {
+          throw "flight and updatedFlight {id} did not match"
+        }
         
         // Convert flight and updatedFlight to TdbFlight type
         const DbFlight: TdbFlight = this.toDbFlight(flight)
@@ -175,11 +179,9 @@ export class FlyListDB {
   static async deleteAircraft(aircraft: Taircraft): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
-        
         await db.execute("DELETE FROM aircraft WHERE id = $1", [aircraft.id])
         await db.execute("DELETE FROM flights WHERE aircraft_id = $1", [aircraft.id])
         
-        await db.close()
         return true
       } catch (error) {
         throw new Error(`Error when deleting aircraft: ${error}`)
@@ -213,7 +215,7 @@ export class FlyListDB {
         ]);
         
         await db.execute(query, params);
-        await db.close();
+
       } catch (error) {
         throw new Error(`Error inserting batch of airports: ${error}`);
       }
