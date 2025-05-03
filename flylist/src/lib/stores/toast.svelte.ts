@@ -1,3 +1,4 @@
+import { SettingsManager } from "$lib/managers/settings";
 import type { Tpreferences } from "$lib/types/preferences";
 import type { Ttoast } from "$lib/types/toast";
 import { load } from "@tauri-apps/plugin-store";
@@ -20,11 +21,10 @@ export function getToast() {
       onToastChange(currentToast); // Notify the callback about the new toast
     }
   
-    const settings = await load("settings.json");
-    const preferences = await settings.get<Tpreferences>("preferences");
-  
-    let infoSuccessDuration = preferences?.info_success_duration || 1500;
-    let errorDuration = preferences?.error_duration || 5000;
+    // Get preferences for toast duration before autohide
+    const preferences = await SettingsManager.getPreferences()
+    let infoSuccessDuration = preferences.toasts.info_success_duration
+    let errorDuration = preferences.toasts.error_duration
   
     // Automatically clear the current toast after its duration
     setTimeout(async () => {

@@ -10,6 +10,7 @@
   import { type Tpreferences } from "$lib/types/preferences";
   import { goto } from "$app/navigation";
   import { MetarManager } from "$lib/managers/metar";
+  import { SettingsManager } from "$lib/managers/settings";
 
   let spanClass = 'flex-1 ms-3 whitespace-nowrap';
   let site = {
@@ -94,11 +95,9 @@
 
 
       // Get preferences for toast duration before autohide
-      const settings = await load("settings.json");
-      const preferences = await settings.get<Tpreferences>("preferences");
-
-      let infoSuccessDuration = preferences?.info_success_duration || 1500;
-      let errorDuration = preferences?.error_duration || 5000;
+      const preferences = await SettingsManager.getPreferences()
+      let infoSuccessDuration = preferences.toasts.info_success_duration
+      let errorDuration = preferences.toasts.error_duration
 
       // Automatically hide the toast after its duration
       setTimeout(() => {
