@@ -1,5 +1,10 @@
 import Papa from "papaparse";
 
+/**
+ * Process a csv file into json data by providing it's url in batches, using provided functions to use data
+ * @param param0 Object containing all required parameters: {url, message, transformFunction, saveFunction, setProgress, updateMessage, hasHeaders (true)}
+ * @returns 
+ */
 export async function processCSV<T>({
   url,
   message,

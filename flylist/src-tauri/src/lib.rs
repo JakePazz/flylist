@@ -81,6 +81,7 @@ pub fn run() {
         let client = reqwest::Client::new();
         let url = format!("https://api.checkwx.com/metar/{}/decoded", icao);
         
+        // Send request and return text content or error to js
         match client.get(&url)
             .header("X-API-Key", api_key)
             .send()

@@ -1,3 +1,8 @@
+/**
+ * Formats a date in the standard website format showing {month shortened} {day date}, {year}, {hours:minutes}
+ * @param date
+ * @returns Formatted date string
+ */
 export function formatDate(date: Date) {
   return date.toLocaleString('en-US', {
     hour: '2-digit',

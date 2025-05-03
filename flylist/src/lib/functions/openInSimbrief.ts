@@ -1,6 +1,10 @@
 import type { Tflight } from "$lib/types/flight"
 import { open } from '@tauri-apps/plugin-shell';
 
+/**
+ * Open a provided flight in simbrief using all revelant values within object to auto-fill fields
+ * @param flight
+ */
 export function openInSimbrief(flight: Tflight) {
   const url = `https://dispatch.simbrief.com/options/custom`
   const params: { key: string, value: string }[] = []

@@ -1,5 +1,10 @@
 import type { Tairline } from "$lib/types/airline";
 
+/**
+ * Convert an object into a airline type disregarding any unused data, throwing an error if required fields (icao, country) are not provided within `data`
+ * @param data
+ * @returns 
+ */
 export function toAirlineType(data: Record<string, unknown>): Tairline {
   // Handle case where fields might have different names
   const id = data.id ?? data.airline_id ?? data[0];

@@ -18,9 +18,17 @@ type TdbFlight = {
   last_edited: Date,
 }
 
+/**
+ * Interact with the app's internal Sqlite database
+ */
 export class FlyListDB {
   
 
+  /**
+   * Create a new flight within the '**flights**' table with provided data
+   * @param data Flight data
+   * @returns
+   */
   static async createFlight(data: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -42,6 +50,10 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Get all flights from database
+   * @returns Array of flights
+   */
   static async getFlights(): Promise<Tflight[]> {
     return this.withConnection(async (db) => {
       try {
@@ -78,6 +90,11 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Delete a flight from the database
+   * @param flight Flight to be deleted
+   * @returns 
+   */
   static async deleteFlight(flight: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -90,6 +107,11 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Switch a flight between unarchived and archived
+   * @param flight Flight to be toggled
+   * @returns
+   */
   static async toggleArchiveFlight(flight: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -102,6 +124,12 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * 
+   * @param flight Original, unchanged flight data
+   * @param updatedFlight Updated, flight data
+   * @returns 
+   */
   static async editFlight(flight: Tflight, updatedFlight: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -142,6 +170,11 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Create a new aircraft to be added to '**aircraft**' table to be available for creating flights
+   * @param aircraft Aircraft to be created
+   * @returns 
+   */
   static async createAircraft(aircraft: Taircraft): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -164,6 +197,10 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Get all aircraft from the database '**aircraft**'
+   * @returns
+   */
   static async getAircraft(): Promise<Taircraft[]> {
     return this.withConnection(async (db) => {
       try {
@@ -176,6 +213,11 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Delete an aircraft and its related flights from database
+   * @param aircraft Aircraft to be deleted
+   * @returns 
+   */
   static async deleteAircraft(aircraft: Taircraft): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
@@ -189,7 +231,11 @@ export class FlyListDB {
     })
   }
 
-
+  /**
+   * Creates batch set of airports, inserting into '**airports**' table
+   * @param airports Airports to be created
+   * @returns 
+   */
   static async createAirports(airports: Tairport[]): Promise<void> {
     return this.withConnection(async (db) => {
       try {
@@ -222,6 +268,12 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Fetch an airport from '**airports**' using either its ICAO or IATA code
+   * @param icao Airport's ICAO code
+   * @param iata Airport's IATA code
+   * @returns 
+   */
   static async getAirport(icao?: string, iata?: string): Promise<Tairport> {
     return this.withConnection(async (db) => {
       try {
@@ -252,6 +304,11 @@ export class FlyListDB {
     })
   }
 
+  /**
+   * Creates batch set of airlines, inserting into '**airlines**' table
+   * @param airlines Array of airlines to be created
+   * @returns 
+   */
   static async createAirlines(airlines: Tairline[]): Promise<void> {
     return this.withConnection(async (db) => {
       try {
@@ -273,13 +330,17 @@ export class FlyListDB {
         ]);
         
         await db.execute(query, params);
-
       } catch (error) {
         throw new Error(`Error inserting batch of airlines: ${error}`);
       }
     })
   }
 
+  /**
+   * Fetch an airline from '**airlines**' with its ICAO code
+   * @param icao ICAO of airline to be fetched
+   * @returns 
+   */
   static async getAirline(icao: string): Promise<Tairline> {
     return this.withConnection(async (db) => {
       try {

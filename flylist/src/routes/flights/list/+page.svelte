@@ -98,6 +98,7 @@
     currentPageFlights = flights.slice(start, end)
   }
 
+  // Pagination previous btn
   const previous = async () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
@@ -111,6 +112,7 @@
     await loadPage()
   };
 
+  // Pagination next btn
   const next = async () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
@@ -124,6 +126,7 @@
     await loadPage()
   };
 
+  // Pagination skip to selected page
   const pageClick = async (page: number) => {
     
     // Set all pages to inactive
@@ -175,6 +178,7 @@
     editModal = true
   }
 
+  // Update edit modal duration value to reflect hours and minutes input
   $effect(() => {
     if (editModalContent?.duration) {
       editModalContent.duration = (editModalHours * 60) + editModalMinutes
@@ -345,8 +349,6 @@
       </div>
     {/if}
   </div>
-
-  <!-- TODO: On small width screens, make it show either table or expandedFlight IF get overflow on screen or under max width for small screen -->
 
   {#if showExpandedSection}  
     <div class="w-96 flex flex-col gap-4 pl-4 py-2 overflow-y-auto overflow-x-hidden min-w-0 scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent" in:fly={{ x: 20, duration: 300 }}>

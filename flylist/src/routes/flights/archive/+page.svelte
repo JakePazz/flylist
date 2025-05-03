@@ -57,6 +57,7 @@
     currentPageFlights = flights.slice(start, end)
   }
 
+  // Pagination previous btn
   const previous = () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
@@ -70,6 +71,7 @@
     loadPage()
   };
 
+  // Pagination next btn
   const next = () => {
     const pageIndex = pages.findIndex((page) => page.active === true)
 
@@ -83,6 +85,7 @@
     loadPage()
   };
 
+  // Pagination skip to selected page
   const pageClick = (page: number) => {
     
     // Set all pages to inactive

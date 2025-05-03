@@ -76,6 +76,7 @@
       message = "Importing airports data from ourairports.com"
       currentStep = 2
 
+      // Create 'airports' table from online airports data
       const airportsResult = await processCSV({
         url: airportsUrl,
         message: "Importing airports data from ourairports.com",
@@ -96,6 +97,7 @@
 
       currentStep = 3
       
+      // Create 'airlines' table from online airlines data
       const airlinesResult = await processCSV({
         url: airlinesUrl,
         message: "Importing airlines data",

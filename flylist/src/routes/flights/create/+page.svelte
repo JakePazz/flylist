@@ -34,17 +34,13 @@
     last_edited: new Date(),
   })
 
-  
   const toast = getToast()
 
   onMount(async () => {
     // Get aircraft and default dropdown to first one in array
     aircrafts = await FlyListDB.getAircraft()
     flightInputs.aircraft = aircrafts[0]
-
   })
-
-
 
   let hoursInput: number = $state(0)
   let minutesInput: number = $state(0)
@@ -92,7 +88,7 @@
     try {
       if (!flightInputs) return
 
-      // Departure Airport valid (found in airports table)
+      // Departure Airport valid check
       const depAirport = await FlyListDB.getAirport(flightInputs.route.dep_airport)
       if (!depAirport) {
         toast.addToast({
@@ -102,7 +98,7 @@
         return
       }
 
-      // Arrival Airport valid (found in airports table)
+      // Arrival Airport valid check
       const arrAirport = await FlyListDB.getAirport(flightInputs.route.arr_airport)
       if (!arrAirport) {
         toast.addToast({
@@ -112,6 +108,7 @@
         return
       }
 
+      // Airline ICAO valid check
       const airline = await FlyListDB.getAirline(flightInputs.company.airline_icao)
       if (!airline) {
         toast.addToast({
@@ -120,8 +117,6 @@
         })
         return
       }
-
-      console.log(airline)
 
       // Duration is a positive value
       if (flightInputs.duration <= 0) {
@@ -132,6 +127,7 @@
         return
       }
 
+      // Flight number provided check
       if (!flightInputs.company.fl_no) {
         toast.addToast({
           title: "Flight number required",
@@ -144,8 +140,6 @@
       if (!flightInputs.company.callsign) {
         flightInputs.company.callsign = flightInputs.company.fl_no
       }
-
-      console.log($state.snapshot(flightInputs))
       
       await FlyListDB.createFlight(flightInputs)
 
@@ -161,7 +155,7 @@
     }
   }
 
-  let aircraftGroup = $state(1);
+  let aircraftGroup = $state(1); // Used by aircraft dropdown
 
   // Update aircraft based upon dropdown changes `aircraftGroup`
   $effect(() => { 

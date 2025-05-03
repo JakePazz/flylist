@@ -9,13 +9,41 @@ A small tauri/SvelteKit application to track your wishlist of virtual flights
 - Tauri
 - Flowbite Svelte
 - sqlite DB (tauri plugin)
-- HugeIcons
+- HugeIcons (stored as svgs within lib/assets/hugeicons)
+
+## Database
+
+The app uses a sqlite database that stores all data locally on the device that is held within the app. Note that some settings and cache data is instead stored within tauri-stores; json documents within the app's directory.
+
+### Tables
+
+- **aircraft**: All aircraft that are referenced within flights
+- **airlines**: Dataset with all common airlines fetched from [openflights.org](https://openflights.org/data.php#airline)
+- **airports**: Dataset with airports from [ourairports.com](https://ourairports.com/data/)
+- **flights**: Core table that stores all of the user's wishlist flights
 
 ## Data
 
 - METAR fetched from [CheckWX API](https://www.checkwxapi.com/)
 - Airports from [ourairports.com](https://ourairports.com/data/)
 - Airlines from [openflights.org](https://openflights.org/data.php#airline)
+
+### Settings
+
+Settings are kept within `settings.json` in the app's directory. Settings are all typed and defaulted in multiple locations.
+
+_Note: To manually change the settings close the dev server otherwise changes are ignored and overwritten upon closing._
+
+### Future Developments
+
+Features that could be useful that could be added in the future
+
+- List Filters (e.g: airport, airline icao, aircraft, min/max length)
+- Reset DB Btn
+  - Hard Reset Btn for all settings
+- Scheduling of Flights
+- GSX Profile scanner integration? Check if a GSX profile is available for an airport
+- Updater
 
 ## TODO
 
@@ -41,7 +69,7 @@ A small tauri/SvelteKit application to track your wishlist of virtual flights
   - [X] Add Hard reload for metar - put button next to metar copy to clipboard to bypass caching as a backup
 - [X] Add confirm modal to delete action in /flights/list
 - [X] Update /setup to work with changes made to settings management
-- [ ] Improve documentation & Commenting
+- [X] Improve documentation & Commenting
 - [ ] Improve logging
 - [ ] Add information section to settings
   - Report issues
@@ -49,17 +77,3 @@ A small tauri/SvelteKit application to track your wishlist of virtual flights
   - Licensing
   - Credits
 - [ ] Create icon (google for command)
-
-### Settings
-
-Settings are kept within `settings.json` in the app's directory. Preferences are stored within a preferences object that is typed with Tpreferences.
-
-### Future Developments
-
-Features that could be useful that could be added in the future
-
-- List Filters (e.g: airport, airline icao, aircraft, min/max length)
-- Scheduling of Flights
-- Reset DB Btn
-  - Hard Reset Btn for all settings
-- Updater

@@ -1,6 +1,11 @@
 import type { Tairport } from "$lib/types/airport";
 import type { TairportType } from "$lib/types/airportType";
 
+/**
+ * Convert data into airport type
+ * @param data
+ * @returns
+ */
 export function toAirportType(data: Record<string, unknown>): Tairport {
   return {
     id: data.id as number,
