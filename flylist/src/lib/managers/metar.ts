@@ -1,7 +1,10 @@
-import type { TmetarAPISettings } from "$lib/types/settings";
+import type { TmetarAPISettings } from "$lib/types/metarAPISettings";
 import { invoke } from '@tauri-apps/api/core';
 import { load } from '@tauri-apps/plugin-store';
 import { Store } from '@tauri-apps/plugin-store';
+import { SettingsManager } from "./settings";
+import type { Tmetar } from "$lib/types/metar";
+import { getToast } from "$lib/stores/toast.svelte";
 
 /**
  * Manages interactions with CheckWX API, found at: https://www.checkwxapi.com/
@@ -18,12 +21,12 @@ export class MetarManager {
   }
   
   /**
-   * Get the metar information for an airport via it's ICAO code with data cached for 30m before re-fetching
+   * Get the metar information for an airport via it's ICAO code with data cached for Xmins before re-fetching - returns undefined if no metar found or no api key available
    * @param icao ICAO Code of airport to fetch METAR for
    * @param ignoreCache Set to true to force a new request
    * @returns
    */
-  static async get(icao: string, ignoreCache: boolean = false) {
+  static async get(icao: string, ignoreCache: boolean = false): Promise<Tmetar | undefined> {
     try {
       const store = await this.getStore()
       const cacheKey = `metar_${icao}`
@@ -45,8 +48,19 @@ export class MetarManager {
 
       const apiKey = await this.getAPIKey()
 
+      // Do not continue if no api key provided
+      if (!apiKey) {
+        return
+      }
+
       // Calls fetch_weather in backend and formats to send to metar_cache.json
       const data: string = await invoke('fetch_weather', { icao, apiKey })
+
+      // Return undefined if unauthorised
+      if (data.toLowerCase().includes("unauthorized")) {
+        return
+      }
+
       const parsedData = JSON.parse(data)["data"][0]
       parsedData["observed"] += "Z" // Add 'Z' to observed timestamps to JS recognises it as UTC not local time
       
@@ -95,8 +109,9 @@ export class MetarManager {
    */
   static async deleteCache(): Promise<boolean> {
     try {
-      await load("metar_cache.json", { createNew: true })
-
+      const metarCache = await load("metar_cache.json", { createNew: true })
+      
+      metarCache.save()
       return true
     } catch (error) {
       console.error(`Error deleting METAR cache ${error}`)
@@ -108,15 +123,25 @@ export class MetarManager {
    * Fetches the API Key from settings.json > metar_api > key; throws an error if no api key found
    * @return
    */
-  private static async getAPIKey(): Promise<string> {
-    const store = await load("settings.json")
-    const metarPreferences = await store.get<TmetarAPISettings>("metar_api")
+  private static async getAPIKey(): Promise<string | undefined> {
+    const metarPreferences = await SettingsManager.getMetarAPISettings()
+    return metarPreferences.key || undefined
+  }
+
+  static async validateAPIKey(): Promise<boolean> {
+    const metarPreferences = await SettingsManager.getMetarAPISettings()
 
     if (!metarPreferences?.key) {
-      throw "No API Key found in settings > metar_api > key"
+      return true // Do not force error if no api key avaiable - user preference to not use it
     }
 
-    return metarPreferences.key
+    const metar = await this.get("EGLL", true)
+
+    if (!metar) {
+      return false
+    }
+
+    return true
   }
 
 }

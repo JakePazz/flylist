@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Tflight } from '$lib/types/flight';
-  import { Label, Input, Button, Toast, Helper, Dropdown, Radio, Card } from 'flowbite-svelte';
-  import { CheckOutline, ChevronDownOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
+  import { Label, Input, Button, Helper, Dropdown, Radio, Card } from 'flowbite-svelte';
+  import { ChevronDownOutline, CreditCardPlusAltOutline } from 'flowbite-svelte-icons';
   import { FlyListDB } from '$lib/managers/database';
-  import { fly } from 'svelte/transition';
   import { onMount } from 'svelte';
   import type { Taircraft } from '$lib/types/aircraft';
   import { getToast } from '$lib/stores/toast.svelte';

@@ -3,92 +3,100 @@
   import { formatDate } from "$lib/functions/formatDate";
   import { getToast } from "$lib/stores/toast.svelte";
   import { type Taircraft } from "$lib/types/aircraft";
-  import type { Tpreferences } from "$lib/types/preferences";
-  import { LazyStore, load } from "@tauri-apps/plugin-store";
-  import { Button, Dropdown, DropdownItem, Input, Label, TabItem, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tabs } from "flowbite-svelte";
-  import { ArchiveOutline, ArrowsRepeatOutline, DotsHorizontalOutline, FireOutline, FloppyDiskOutline, PlusOutline, TrashBinOutline } from "flowbite-svelte-icons";
+  import { Button, Dropdown, Input, Label, Modal, Radio, TabItem, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tabs, Tooltip } from "flowbite-svelte";
+  import { ArrowsRepeatOutline, ChevronDownOutline, CloseOutline, EyeOutline, FireOutline, FloppyDiskOutline, PlusOutline, TrashBinOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
+  import type { Tsettings } from "$lib/types/settings";
+  import { SettingsManager } from "$lib/managers/settings";
+  import { MetarManager } from "$lib/managers/metar";
+  import { relaunch } from "@tauri-apps/plugin-process";
   
   const toast = getToast()
 
-  // const settings = ["table_row_count", "info_success_duration", "error_duration"]
-  // User Preferences, init with default values
-  let preferences: Tpreferences | undefined = $state()
-
-  let tableRowCount = $state(10)
-  let infoSuccessDuration = $state(1500)
-  let errorDuration = $state(5000)
   let aircraft = $state<Taircraft[]>([])
+  let showAPIKey = $state(false)
 
-  let newAircraft = $state<Taircraft>({
+  const EMPTY_AIRCRAFT = {
     id: 0,
     icao_code: "",
     manufacturer: "",
     model: "",
     name: "",
+  }
+  let newAircraft = $state<Taircraft>(EMPTY_AIRCRAFT)
+
+  let settings: Tsettings = $state({
+    preferences: {
+      table_row_count: 10,
+      toasts: {
+        info_success_duration: 1500,
+        error_duration: 5000
+      },
+      units: {
+        altitude: "feet",
+        barometer: "hpa",
+        general_distance: "metric",
+        precipitation_measurement: "metric",
+        wind_speed: "kts",
+        temperature: "celsius"
+      }
+    },
+    metar_api: {
+      cacheOutdatedAgeMinutes: 30,
+    }
   })
 
   onMount(async () => {
-    // Preferences
-    fetchPreferences()
-    
+    // All settings and preferences
+    fetchSettings()
 
     // Aircraft
     await refreshAircraft(false)
   })
 
-  async function fetchPreferences() {
-    
-    const settings = await load("settings.json")
-    preferences = await settings.get<Tpreferences>("preferences")
-    console.log($state.snapshot(preferences))
-
-    const storedTableRowCount = preferences?.table_row_count
-    if (storedTableRowCount) { tableRowCount = Number(storedTableRowCount) }
-
-    const storedInfoSuccessDuration = preferences?.info_success_duration
-    if (storedInfoSuccessDuration) { infoSuccessDuration = Number(storedInfoSuccessDuration) }
-
-    const storedErrorDuration = preferences?.error_duration
-    if (storedErrorDuration) { errorDuration = Number(storedErrorDuration) }
-    
+  async function fetchSettings() {
+    try {
+      const loadedSettings = await SettingsManager.getAllSettings();
+      settings = loadedSettings
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+      toast.addToast({
+        title: "Error loading settings",
+        type: "error"
+      });
+    }
   }
 
   async function savePreferences() {
     try {
-      if (tableRowCount < 5 || tableRowCount > 25) {
-        await toast.addToast({
+      if (settings.preferences.table_row_count < 5 || settings.preferences.table_row_count > 25) {
+        toast.addToast({
           title: "Table rows must be between 5 & 25",
           type: "error"
         })
+        return
       }
 
-      if (infoSuccessDuration < 500 || infoSuccessDuration > 10000 || errorDuration < 500 || errorDuration > 10000) {
-        await toast.addToast({
+      if (settings.preferences.toasts.info_success_duration < 500 || settings.preferences.toasts.info_success_duration > 10000
+          || settings.preferences.toasts.error_duration < 500 || settings.preferences.toasts.error_duration > 10000) {
+        toast.addToast({
           title: "Autohide Delay must be between 500 and 10000 milliseconds",
           type: "error"
         })
+        return
       }
 
-      const settings = await load("settings.json")
+      await SettingsManager.savePreferences(settings.preferences)
 
-      const newSettings: Tpreferences = {
-        error_duration: errorDuration,
-        info_success_duration: infoSuccessDuration,
-        table_row_count: tableRowCount,
-      }
-      
-      settings.set("preferences", newSettings)
+      await SettingsManager.saveMetarAPISettings(settings.metar_api)
 
-      await settings.save()
-
-      await toast.addToast({
-        title: "Preferences Saved",
+      toast.addToast({
+        title: "Settings Saved",
         type: "success"
       })
     } catch (error) {
-      await toast.addToast({
-        title: "Error when saving preferences",
+      toast.addToast({
+        title: "Error when saving preferences & settings",
         type: "error"
       })
     }
@@ -96,14 +104,10 @@
   
   async function resetPreferences() {
     try {
-      // Reset to defaults
-      tableRowCount = 10
-      infoSuccessDuration = 1500
-      errorDuration = 5000
   
-      await fetchPreferences()
+      await fetchSettings()
   
-      await toast.addToast({
+      toast.addToast({
         title: "Reset Preferences",
         type: "success"
       })
@@ -113,13 +117,27 @@
   }
 
   async function setDefault() {
+    settings = {
+      preferences: {
+        table_row_count: 10,
+        toasts: {
+          info_success_duration: 1500,
+          error_duration: 5000
+        },
+        units: {
+          altitude: "feet",
+          barometer: "hpa",
+          general_distance: "metric",
+          precipitation_measurement: "metric",
+          wind_speed: "kts"
+        }
+      },
+      metar_api: {
+        cacheOutdatedAgeMinutes: 30,
+      }
+    }
 
-    // Set to default values
-    tableRowCount = 10
-    infoSuccessDuration = 1500
-    errorDuration = 5000
-
-    await toast.addToast({
+    toast.addToast({
       title: "Set to default, save to keep these changes",
       type: "success"
     })
@@ -130,17 +148,16 @@
 
     if (!doToast) return
 
-    await toast.addToast({
+    toast.addToast({
       title: "Aircraft Refreshed",
       type: "info"
     })
   }
 
+  // Aircraft management
 
-  // Aircraft
   async function getAircraft() {
     aircraft = await FlyListDB.getAircraft()
-
   }
 
   async function createAircraft() {
@@ -149,13 +166,15 @@
 
       await refreshAircraft()
 
+      newAircraft = EMPTY_AIRCRAFT
+
       if (result) {
-        await toast.addToast({
+        toast.addToast({
           title: "Aircraft Created",
           type: "success"
         })
       } else {
-        await toast.addToast({
+        toast.addToast({
           title: "Failed to create aircraft",
           type: "error"
         })
@@ -163,29 +182,84 @@
 
     } catch (error) {
       console.error(error)
-      await toast.addToast({
+      toast.addToast({
         title: "Error when creating aircraft",
         type: "error"
       })
     }
   }
 
-  async function deleteAircraft(aircraft: Taircraft) {
+  function openDeleteAircraftModal(aircraft: Taircraft) {
+    deleteAircraft = aircraft
+    deleteAircraftModalVisible = true
+  }
+
+  async function deleteModalAircraft(aircraft: Taircraft) {
     try {
       await FlyListDB.deleteAircraft(aircraft)
 
       await refreshAircraft(false)
 
-      await toast.addToast({
+      toast.addToast({
         title: "Aircraft Deleted",
         type: "success"
       })
-
-      // TODO: Add confirmation modal and make sure user knows that it will also delete all flights using this aircraft
-
       
     } catch (error) {
       console.error(error)
+      toast.addToast({
+        title: "Failed to delete aircraft",
+        type: "error"
+      })
+    }
+  }
+
+  let deleteAircraftModalVisible = $state(false)
+  let deleteAircraft: Taircraft | undefined = $state() // The aircraft user may delete
+
+  // Limit aircraft ICAO input to max 4 chars
+  $effect(() => {
+    if (newAircraft.icao_code.length > 4) {
+      newAircraft.icao_code = newAircraft.icao_code.substring(0, 4)
+    }
+  })
+
+  // Metar Management
+
+  async function cleanupMetarCache() {
+    try {
+      await MetarManager.cleanupCache()
+
+      toast.addToast({
+        title: "Cache cleared",
+        type: "success"
+      })
+    } catch (error) {
+      console.error(`Error when attempting to call MetarManager.cleanupCache(): ${error}`)
+      toast.addToast({
+        title: "Failed to cleanup cache due to an error",
+        type: "error"
+      })
+    }
+  }
+
+  async function deleteMetarCache() {
+    try {
+      await MetarManager.deleteCache()
+
+      await relaunch()
+
+      toast.addToast({
+        title: "Deleted METAR cache",
+        type: "success"
+      })
+
+    } catch (error) {
+      console.error(`Error when attempting to call MetarManager.deleteCache(): ${error}`)
+      toast.addToast({
+        title: "Failed to cleanup cache due to an error",
+        type: "error"
+      })
     }
   }
 
@@ -195,8 +269,9 @@
 
 {#key aircraft}
     <Tabs>
-      <TabItem open title="Preferences">
-        <div class="flex flex-col items-center px-6">
+      <TabItem open title="Settings">
+        <div class="flex flex-col items-center px-6 max-h-[70vh] overflow-y-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
+          <h3 class="text-xl mb-2 font-medium text-gray-200 w-full">General Preferences</h3>
 
           <div class="flex justify-between items-center w-full">
             <span class="flex flex-col gap-2 ">
@@ -204,10 +279,12 @@
               <p class="text-gray-500 mr-4">Alter the maximum number of rows in each page of a table. Can be between 5 and 25</p>
             </span>
           
-            <Input bind:value={tableRowCount} type="number" defaultClass="w-18 font-medium text-lg"/>
+            <Input bind:value={settings.preferences.table_row_count} type="number" defaultClass="w-18 font-medium text-lg"/>
           </div>
 
           <span class="w-full h-[2px] border-b-[1px] rounded border-gray-700 my-4"></span>
+
+          <h3 class="text-xl mb-2 font-medium text-gray-200 w-full">Toasts</h3>
 
           <div class="flex justify-between items-center w-full">
             <span class="flex flex-col gap-2 ">
@@ -219,19 +296,19 @@
               <Button onclick={async () => {
                 // 50/50 on either info or success for test
                 if (Math.round(Math.random())) {
-                  await toast.addToast({
-                  title: "Useful information goes here",
-                  type: "info"
-                })
+                  toast.addToast({
+                    title: "Useful information goes here",
+                    type: "info"
+                  })
                 } else {
-                  await toast.addToast({
+                  toast.addToast({
                     title: "Wow! Something good happened...",
                     type: "success"
                   })
                 }
               }} color="alternative" size="sm" class="h-fit py-1 px-2 mr-1">Test</Button>
               
-              <Input bind:value={infoSuccessDuration} type="number" defaultClass="w-18 font-medium text-lg"/>
+              <Input bind:value={settings.preferences.toasts.info_success_duration} type="number" defaultClass="w-18 font-medium text-lg"/>
             </span>
           </div>
 
@@ -244,29 +321,217 @@
 
             <span class="flex gap-2 items-center">
               <Button onclick={async () => {
-                await toast.addToast({
+                toast.addToast({
                   title: "Oh no! Something broke :(",
                   type: "error"
                 })
               }} color="alternative" size="sm" class="h-fit py-1 px-2 mr-1">Test</Button>
 
-              <Input bind:value={errorDuration} type="number" defaultClass="w-18 font-medium text-lg"/>
+              <Input bind:value={settings.preferences.toasts.error_duration} type="number" defaultClass="w-18 font-medium text-lg"/>
             </span>
           </div>
 
           <span class="w-full h-[2px] border-b-[1px] rounded border-gray-700 my-4"></span>
 
-          <span class="flex gap-4 justify-end w-full">
-            <Button onclick={async () => {await setDefault()}} color="alternative">Set to Default</Button>
-            <Button onclick={async () => {await resetPreferences()}} color="alternative"> <ArrowsRepeatOutline/> Reset</Button>
-            <Button onclick={async () => {await savePreferences()}}> <FloppyDiskOutline /> Save</Button>
-          </span>
+          <h3 class="text-xl mb-2 font-medium text-gray-200 w-full">Unit Preferences</h3>
+
+          <div class="flex justify-between items-center w-full">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Altitudes</h3>
+              <p class="text-gray-500 mr-4">Can be either 'feet' or 'meters' (default: 'feet')</p>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.altitude}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="altitudes" bind:group={settings.preferences.units.altitude} value="feet">Feet</Radio>
+              </li>
+              <li>
+                <Radio name="altitudes" bind:group={settings.preferences.units.altitude} value="meters">Meters</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Barometer</h3>
+
+              <span>
+                <p class="text-gray-500 mr-4">Can be either 'hg' (Inches of Mercury), 'hpa' (HectoPascals), 'kpa' (KiloPascals), 'mb' (Millibars)</p>
+                <p class="text-gray-500 mr-6 italic">default: <span class="font-medium text-gray-400">hpa</span></p>
+              </span>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.barometer}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="barometric_pressure" bind:group={settings.preferences.units.barometer} value="hg">Inches of Mercury</Radio>
+              </li>
+              <li>
+                <Radio name="barometric_pressure" bind:group={settings.preferences.units.barometer} value="hpa">HectoPascals</Radio>
+              </li>
+              <li>
+                <Radio name="barometric_pressure" bind:group={settings.preferences.units.barometer} value="kpa">KiloPascals</Radio>
+              </li>
+              <li>
+                <Radio name="barometric_pressure" bind:group={settings.preferences.units.barometer} value="mb">Millibars</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Distances</h3>
+              <span>
+                <p class="text-gray-500 mr-4">Choose between either 'imperial' or 'metric' units</p>
+                <p class="text-gray-500 mr-6 italic">default: <span class="font-medium text-gray-400">metric</span></p>
+              </span>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.general_distance}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="general_distance" bind:group={settings.preferences.units.general_distance} value="metric">Metric</Radio>
+              </li>
+              <li>
+                <Radio name="general_distance" bind:group={settings.preferences.units.general_distance} value="imperial">Imperial</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Temperature</h3>
+              <span>
+                <p class="text-gray-500 mr-4">Choose between 'celsius' or 'fahrenheit'</p>
+                <p class="text-gray-500 mr-6 italic">default: <span class="font-medium text-gray-400">celsius</span></p>
+              </span>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.temperature}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="temperature" bind:group={settings.preferences.units.temperature} value="celsius">Celsius</Radio>
+              </li>
+              <li>
+                <Radio name="temperature" bind:group={settings.preferences.units.temperature} value="fahrenheit">Fahrenheit</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Wind Speed</h3>
+              <span>
+                <p class="text-gray-500 mr-4">Choose between kph (Kilometers per Hour), kts (Knots), mph (Miles per Hour), mps (Meters per Second)</p>
+                <p class="text-gray-500 mr-6 italic">default: <span class="font-medium text-gray-400">kts</span></p>
+              </span>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.wind_speed}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="wind_speed" bind:group={settings.preferences.units.wind_speed} value="kph">Kilometers per Hour (kph)</Radio>
+              </li>
+              <li>
+                <Radio name="wind_speed" bind:group={settings.preferences.units.wind_speed} value="kts">Knots (kts)</Radio>
+              </li>
+              <li>
+                <Radio name="wind_speed" bind:group={settings.preferences.units.wind_speed} value="mph">Miles per Hour (mph)</Radio>
+              </li>
+              <li>
+                <Radio name="wind_speed" bind:group={settings.preferences.units.wind_speed} value="mps">Meters per Second (mps)</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Precipitation</h3>
+              <span>
+                <p class="text-gray-500 mr-4">Measurements of all precipitation (e.g rain, snow). Choose between 'imperial' or 'metric'</p>
+                <p class="text-gray-500 mr-6 italic">default: <span class="font-medium text-gray-400">metric</span></p>
+              </span>
+            </span>
+
+            <Button color="alternative">
+              {settings.preferences.units.precipitation_measurement}<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+            </Button>
+            <Dropdown class="w-44 p-3 space-y-3 text-sm">
+              <li>
+                <Radio name="precipitation_measurement" bind:group={settings.preferences.units.precipitation_measurement} value="metric">Metric</Radio>
+              </li>
+              <li>
+                <Radio name="precipitation_measurement" bind:group={settings.preferences.units.precipitation_measurement} value="imperial">Imperial</Radio>
+              </li>
+            </Dropdown>
+          </div>
+
+
+          <span class="w-full h-[2px] border-b-[1px] rounded border-gray-700 my-4"></span>
+
+          <h3 class="text-xl mb-2 font-medium text-gray-200 w-full">CheckWX Metar API Settings</h3>
+          
+          <div class="flex justify-between items-center w-full">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">API Key</h3>
+              <p class="text-gray-500 mr-4">Provide an API Key from <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://www.checkwxapi.com/">CheckWX</a> to receive METAR information for your airports in expanded view. Do not share this API key with others.</p>
+            </span>
+
+            <span class="flex gap-2 items-center">
+              <Button onclick={() => {
+                showAPIKey = showAPIKey ? false : true
+              }} class="px-2 py-2" color="alternative"> <EyeOutline /> </Button>
+              <Tooltip>Toggle Visibility</Tooltip>
+              <Input bind:value={settings.metar_api.key} type={showAPIKey ? "text" : "password"} defaultClass="w-full font-medium text-lg"/>
+            </span>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">METAR Cache Outdated Age</h3>
+              <p class="text-gray-500 mr-4">The number of minutes it takes for a cached METAR to be considered 'outdated' and fetch an updated METAR. Can be between 5m and 120m</p>
+            </span>
+
+            <Input bind:value={settings.metar_api.cacheOutdatedAgeMinutes} type="number" defaultClass="w-18 font-medium text-lg"/>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Metar Cache</h3>
+              <p class="text-gray-500 mr-4">If something is wrong with your the METAR information being shown, you may want to use these actions to try and resolve the issue.</p>
+            </span>
+
+            <span class="flex items-center gap-3 justify-end">
+              <Button onclick={() => {deleteMetarCache()}} size="sm" color="alternative"> <TrashBinOutline class="mr-1"/> Delete Cache</Button>
+              <Tooltip>Deletes entire cache & restarts app</Tooltip>
+
+              <Button onclick={() => {cleanupMetarCache()}} size="sm" color="alternative"> <CloseOutline class="mr-1"/> Cleanup Cache</Button>
+              <Tooltip>Removes all out of date cache entries</Tooltip>
+            </span>
+          </div>
           
         </div>
+
+        <span class="flex gap-4 justify-end w-full mt-4">
+          <Button onclick={async () => {await setDefault()}} color="alternative">Set to Default</Button>
+          <Button onclick={async () => {await resetPreferences()}} color="alternative"> <ArrowsRepeatOutline/> Reset</Button>
+          <Button onclick={async () => {await savePreferences()}}> <FloppyDiskOutline /> Save</Button>
+        </span>
+          
       </TabItem>
 
       <TabItem title="Aircraft">
-        
         <p class="mt-1 mb-4 font-normal text-gray-500 dark:text-gray-400">View and add new aircraft to your flylist. These aircraft are used when creating a new flight.</p>
         <Table items={aircraft} striped={true}>
           <TableHead>
@@ -286,7 +551,7 @@
                 <TableBodyCell>{item.manufacturer}</TableBodyCell>
                 <TableBodyCell>{item.icao_code}</TableBodyCell>
                 <TableBodyCell>{formatDate(new Date(item.created_at))}</TableBodyCell>
-                <TableBodyCell> <Button onclick={() => {deleteAircraft(item)}} color="alternative" > <FireOutline color="red" /> </Button> </TableBodyCell>
+                <TableBodyCell> <Button onclick={() => {openDeleteAircraftModal(item)}} color="alternative" > <FireOutline color="red" /> </Button> </TableBodyCell>
               </TableBodyRow>
             </TableBody>
           {:else}
@@ -315,6 +580,41 @@
           </TableBodyRow>
         </Table>
       </TabItem>
-
     </Tabs>
 {/key}
+
+<Modal title="Are you Sure?" bind:open={deleteAircraftModalVisible} size="xs" autoclose>
+    
+    <p>If you delete this aircraft, all flights using it will also be deleted.</p>
+    <!--  -->
+    {#if deleteAircraft}
+      <div class="flex  gap-6 flex-wrap justify-between">
+        <span>
+          <Label>Name</Label>
+          <p>{deleteAircraft.name}</p>
+        </span>
+
+        <span>
+          <Label>Model</Label>
+          <p>{deleteAircraft.model}</p>
+        </span>
+
+        <span>
+          <Label>ICAO</Label>
+          <p>{deleteAircraft.icao_code}</p>
+        </span>
+          
+        <span>
+          <Label>Manufacturer</Label>
+          <p>{deleteAircraft.manufacturer}</p>
+        </span>
+      </div>
+    {/if}
+
+    <p class="font-medium text-sm text-red-400 italic">This action cannot be undone</p>
+    <Button onclick={() => {
+      if (!deleteAircraft) return
+      deleteModalAircraft(deleteAircraft)
+    }} class="me-2">Yes</Button>
+    <Button color="alternative">Cancel</Button>
+</Modal>

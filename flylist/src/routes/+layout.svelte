@@ -23,14 +23,6 @@
   let layoutReady = $state(false)
 
   onMount(async () => {
-
-    // Remove out of date airports in metar_cache.json
-    try {
-      await MetarManager.cleanupCache()
-    } catch (error) {
-      console.warn(`Failed to cleanup 'metar_cache.json' due to an error: ${error}`)
-    }
-
     try {
 
       await new Promise(resolve => setTimeout(resolve, 500)) // Wait for tauri load
@@ -57,12 +49,35 @@
         }
 
       }
-
     } catch (error) {
       console.error("Error onMount() of layout:", error)
-    } finally {
-      layoutReady = true
     }
+
+    // Remove out of date airports in metar_cache.json
+    try {
+      await MetarManager.cleanupCache()
+    } catch (error) {
+      console.warn(`Failed to cleanup 'metar_cache.json' due to an error: ${error}`)
+    }
+
+    // Test CheckWX API key validity
+    try {
+      const result = await MetarManager.validateAPIKey()
+      if (!result) {
+        toast.addToast({
+          title: "Invalid CheckWX API Key, please update it in settings",
+          type: "error"
+        })
+      }
+    } catch (error) {
+      console.warn(`Failed to validate CheckWX API Key due to an error: ${error}`)
+        toast.addToast({
+          title: "Unable to validate CheckWX API Key due to an error; it could be invalid",
+          type: "info"
+        })
+    }
+
+    layoutReady = true
   })
 
   let showToast = $state(false)

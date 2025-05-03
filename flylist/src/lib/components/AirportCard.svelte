@@ -19,15 +19,31 @@
   import { writeText } from "@tauri-apps/plugin-clipboard-manager";
   import { MetarManager } from "$lib/managers/metar";
   import type { Tmetar } from "$lib/types/metar";
+  import type { TunitPreferences } from "$lib/types/unitPreferences";
+  import { onMount } from "svelte";
+  import { SettingsManager } from "$lib/managers/settings";
 
   const { airport, type }: { airport: Tairport, type: "arrival" | "departure" } = $props();
   const toast = getToast()
   
   let metar: Tmetar | undefined = $state()
   let loadingMetar = $state(false)
+  let units: TunitPreferences = $state({
+    altitude: "feet",
+    barometer: "hpa",
+    general_distance: "metric",
+    precipitation_measurement: "metric",
+    wind_speed: "kts",
+    temperature: "celsius"
+  })
   
   $effect(() => {
     loadMetar()
+  })
+
+  onMount(async () => {
+    const preferences = await SettingsManager.getPreferences()
+    units = preferences.units
   })
   
 
@@ -117,8 +133,6 @@
 
 </script>
 
-<!-- TODO: Add measurement preferences to settings -->
-
 <Card class="!py-5">
   <span class="flex gap-3 items-center">
     <img title="Departure Information" class="w-8 h-8" src={type === "arrival" ? AirplaneLanding : AirplaneTakeoff} alt="Airport Icon">
@@ -162,29 +176,29 @@
         <div class="flex flex-col gap-1.5 items-start justify-start">
           <span class="flex items-center gap-1">
             <img class="w-5 h-5" src={Temperature} alt="Temperature Icon of Thermometer">
-            <p class="text-gray-200 font-medium">{metar.temperature.celsius}&deg;</p>
+            <p class="text-gray-200 font-medium">{units.temperature === "celsius" ? metar.temperature.celsius : metar.temperature.fahrenheit}&deg;</p>
           </span>
-          <Tooltip>Temperature (Celsius)</Tooltip>
+          <Tooltip>Temperature ({units.temperature === "celsius" ? "Celsius" : "Fahrenheit"})</Tooltip>
           
           <span class="flex items-center gap-1">
             <img class="w-5 h-5" src={Droplet} alt="Dewpoint Icon of raindrop">
-            <p class="text-gray-200 font-medium">{metar.dewpoint.celsius}&deg;</p>
+            <p class="text-gray-200 font-medium">{units.temperature === "celsius" ? metar.dewpoint.celsius : metar.dewpoint.fahrenheit}&deg;</p>
           </span>
-          <Tooltip>Dewpoint (Celsius)</Tooltip>
+          <Tooltip>Dewpoint ({units.temperature === "celsius" ? "Celsius" : "Fahrenheit"})</Tooltip>
           
           <span class="flex items-center gap-1">
             <img class="w-5 h-5" src={Dial} alt="Pressure Icon of Dial">
-            <p class="text-gray-200 font-medium">{metar.barometer.hpa}</p>
+            <p class="text-gray-200 font-medium">{metar.barometer[units.barometer]}</p>
           </span>
-          <Tooltip>Pressure (hPa)</Tooltip>
+          <Tooltip>Pressure ({units.barometer == "hg" ? "InHg" : units.barometer})</Tooltip>
         </div>
         
         <!-- Flight Category, Visiblity -->
         <div class="flex flex-col items-center justify-center">
           <span class="bg-green-500 mx-2 mb-1 text-white font-medium px-3 py-2 rounded-lg ">{metar.flight_category}</span>
           <Tooltip>Flight Category</Tooltip>
-          <p id="visibility-numeric">{metar.visibility.meters}</p>
-          <Tooltip triggeredBy="#visibility-numeric" >Visibility {metar.visibility.meters_text.toLowerCase()}m</Tooltip>
+          <p id="visibility-numeric">{metar.visibility[units.general_distance === "metric" ? "meters" : "miles"]}</p>
+          <Tooltip triggeredBy="#visibility-numeric" >Visibility {metar.visibility[units.general_distance === "metric" ? "meters_text" : "miles_text"].toLowerCase()}m</Tooltip>
         </div>
         
         <!-- Clouds -->
@@ -201,24 +215,26 @@
                 <p class="text-gray-300 font-medium">{cloud.code}</p>
                 <Tooltip>{cloud.text}</Tooltip>
                 <span class="flex flex-col items-center justify-around">
-                  <p>{cloud.feet}</p>
-                  <Tooltip>Cloud Height {cloud.base_feet_agl == cloud.feet ? "& Base" : ""} (feet)</Tooltip>
+                  <p>{units.altitude === "feet" ? cloud.feet : cloud.meters}</p>
+                  <Tooltip>Cloud Height {cloud.base_feet_agl == cloud.feet ? "& Base" : ""} ({units.altitude === "feet" ? "feet" : "meters"})</Tooltip>
                   {#if cloud.base_feet_agl != cloud.feet}
-                  <span class="w-[100%] h-[2px] rounded bg-gray-200"></span>
-                  <p>{cloud.base_feet_agl}</p>
-                  <Tooltip>Cloud Base (feet)</Tooltip>
+                    <span class="w-[100%] h-[2px] rounded bg-gray-200"></span>
+                    <p>{cloud[units.altitude]}</p>
+                    <Tooltip>Cloud Base (feet)</Tooltip>
                   {/if}
                 </span>
               </div>
             {/each}
           {:else}
-          <img src={Cloud} alt="Cloud Icon">
-          <p class="italic text-sm">No Clouds</p>
+            <span class="flex flex-col items-center justify-center">
+              <img src={Cloud} alt="Cloud Icon" class="w-8 h-8">
+              <p class="italic text-sm">No Clouds</p>
+            </span>
           {/if}
           
           {#if metar.ceiling}
-          <span class="w-[100%] h-[2px] rounded bg-gray-200 mb-0.5"></span>
-          <p class="text-center">{metar.ceiling.feet}</p>
+          <span class="w-full h-[2px] rounded bg-gray-200 mb-0.5"></span>
+          <p class="text-center">{metar.ceiling[units.altitude]}</p>
           <Tooltip>Ceiling (feet)</Tooltip>
           {/if}
         </div>
@@ -237,7 +253,7 @@
         {#if metar.wind}
         <span class="flex gap-2 items-center">
           <img class="w-5 h-5" src={FastWind} alt="Wind Speed Icon">
-          <p class="text-lg font-medium">{metar.wind.speed_kts}kts</p>
+          <p class="text-lg font-medium">{metar.wind[`speed_${units.wind_speed}`]}kts</p>
           <Tooltip>Wind Speed (knots)</Tooltip>
         </span>
         
@@ -289,7 +305,7 @@
   {:else if !metar && loadingMetar}
     <span class="w-full mt-7 mb-3 mx-auto text-center">
       <Spinner />
-      <p class="text-sm italic " >Loading metar</p>
+      <p class="text-sm italic" >Loading metar</p>
     </span>
   {/if}
 </Card>

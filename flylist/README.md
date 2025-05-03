@@ -35,11 +35,12 @@ A small tauri/SvelteKit application to track your wishlist of virtual flights
   - [X] Aircraft - added to popover
   - [X] Simbrief button
 - [X] Update flight list to populate aircraft with the column storing the id of the aircraft and show name
-- [ ] Complete expanded flight
-  - [ ] Add API key input and measurement selection into settings
+- [X] Complete expanded flight
+  - [X] Add API key input and measurement selection into settings
   - [X] Create metar manager - try and get some kind of airport data caching working where it stores them then will call DB again if out of date by at least 30m
   - [X] Add Hard reload for metar - put button next to metar copy to clipboard to bypass caching as a backup
-- [ ] Add confirm modal to delete action in /flights/list
+- [X] Add confirm modal to delete action in /flights/list
+- [X] Update /setup to work with changes made to settings management
 - [ ] Improve documentation & Commenting
 - [ ] Improve logging
 - [ ] Add information section to settings

@@ -82,7 +82,7 @@
 
     if (!doToast) return
 
-    await toast.addToast({
+    toast.addToast({
       title: "Flights Refreshed",
       type: "info"
     })
@@ -145,13 +145,13 @@
       const result = await FlyListDB.editFlight(flight, updated)
 
       if (result) {
-        await toast.addToast({
+        toast.addToast({
           title: `Saved Changes to #${flight.id}`,
           type: "success"
         })
       } else {
         console.error(`Failed to save changes to #${flight.id}`)
-        await toast.addToast({
+        toast.addToast({
           title: `Failed to save changes to #${flight.id}`,
           type: "error"
         })
@@ -187,12 +187,12 @@
 
       await refreshFlights(false)
 
-      await toast.addToast({
+      toast.addToast({
         title: `Flight deleted`,
         type: "success"
       })
     } catch (error) {
-      await toast.addToast({
+      toast.addToast({
         title: `Failed to delete flight`,
         type: "error"
       })
@@ -205,12 +205,12 @@
 
       await refreshFlights(false)
 
-      await toast.addToast({
+      toast.addToast({
         title: `Flight Archived`,
         type: "success"
       })
     } catch (error) {
-      await toast.addToast({
+      toast.addToast({
         title: `Failed to archive flight`,
         type: "error"
       })

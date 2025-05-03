@@ -41,7 +41,7 @@
 
     if (!doToast) return
 
-    await toast.addToast({
+    toast.addToast({
       title: "Archived Refreshed",
       type: "info"
     })
@@ -102,12 +102,12 @@
 
       await refreshFlights(false)
 
-      await toast.addToast({
+      toast.addToast({
         title: `Restored Flight`,
         type: "success"
       })
     } catch (error) {
-      await toast.addToast({
+      toast.addToast({
         title: `Failed to restore flight`,
         type: "error"
       })

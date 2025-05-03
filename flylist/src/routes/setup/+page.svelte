@@ -1,23 +1,23 @@
 <script lang="ts">
   import type { Tpreferences } from "$lib/types/preferences";
   import { load } from "@tauri-apps/plugin-store";
-  import { Button, Modal, Progressbar, Spinner, StepIndicator, Toast } from "flowbite-svelte";
+  import { Button, Input, Modal, Progressbar, StepIndicator } from "flowbite-svelte";
   import { onMount } from "svelte";
   import { exit, relaunch } from '@tauri-apps/plugin-process';
-  import Papa from 'papaparse';
   import { FlyListDB } from "$lib/managers/database";
-  import type { Tairport } from "$lib/types/airport";
-  import type { TairportType } from "$lib/types/airportType";
   import { goto } from "$app/navigation";
   import { toAirportType } from "$lib/functions/toAirportType";
   import { toAirlineType } from "$lib/functions/toAirlineType";
   import { processCSV } from "$lib/functions/processCSV";
-  import { Window } from '@tauri-apps/api/window';
+  import { SettingsManager } from "$lib/managers/settings";
+  import { CogOutline } from "flowbite-svelte-icons";
 
 
   let message: string = $state("We're setting everything up for you...")
   let errorModal: boolean = $state(false)
   let errorContent: string = $state("")
+
+  let apiKey: string = $state("")
 
   onMount(async () => {
 
@@ -38,13 +38,13 @@
 
   let currentStep = $state(1)
   let airportsProgressPercentage = $state(0)
-  let airlinesProgressPercentage = $state(0);
+  let airlinesProgressPercentage = $state(0)
 
-  let steps = ["Create settings.json", "Download airports data", "Download airlines data", "Setup complete"]
+  let steps = ["Create settings.json", "Download airports data", "Download airlines data", "Configuration", "Setup complete"]
 
   async function setup() {
 
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 3000))
 
     try {
       // Set default preferences in settings.json
@@ -52,9 +52,19 @@
       const settings = await load("settings.json", { createNew: true })
 
       const defaultSettings: Tpreferences = {
-        error_duration: 5000,
-        info_success_duration: 1500,
+        toasts: {
+          error_duration: 5000,
+          info_success_duration: 1500
+        },
         table_row_count: 10,
+        units: {
+          altitude: "feet",
+          barometer: "hpa",
+          general_distance: "metric",
+          wind_speed: "kts",
+          precipitation_measurement: "metric",
+          temperature: "celsius"
+        }
       }
 
       await settings.set("preferences", defaultSettings)
@@ -77,12 +87,12 @@
       });
 
       if (!airportsResult.success) {
-        errorModal = true;
-        errorContent = airportsResult.error || "Unknown error processing airports";
-        return;
+        errorModal = true
+        errorContent = airportsResult.error || "Unknown error processing airports"
+        return
       }
 
-      message = `Airport data import complete (${airportsResult.count} airports processed)`;
+      message = `Airport data import complete (${airportsResult.count} airports processed)`
 
       currentStep = 3
       
@@ -97,29 +107,45 @@
       });
 
       if (!airlinesResult.success) {
-        errorModal = true;
-        errorContent = airlinesResult.error || "Unknown error processing airlines";
-        return;
+        errorModal = true
+        errorContent = airlinesResult.error || "Unknown error processing airlines"
+        return
       }
 
-      message = `Airline data import complete (${airlinesResult.count} airlines processed)`;
-      
-      // Setup is complete
-      currentStep = 4;
-      console.log("GOT HERE 1")
-      
-      // Mark setup as complete in settings
-      const settingsSetupComplete = await load("settings.json");
-      await settingsSetupComplete.set("setup_complete", true);
-      await settingsSetupComplete.save();
-      await settingsSetupComplete.close();
+      message = `Airline data import complete (${airlinesResult.count} airlines processed)`
+
+      currentStep = 4
 
     } catch (error) {
-      console.log(error)
+      console.error(error)
       errorModal = true
       if (error) {
         errorContent = String(error)
       }
+    }
+    
+  }
+
+  async function completeSetup() {
+    try {
+
+      if (apiKey != "") {
+        await SettingsManager.saveMetarAPISettings({
+          cacheOutdatedAgeMinutes: 30,
+          key: apiKey
+        })
+      }
+
+      // Setup is complete
+      currentStep = 5;
+      
+      // Mark setup as complete in settings
+      await SettingsManager.saveSetting("setup_complete", true)
+    } catch (error) {
+      console.error(error)
+      errorModal = true
+      errorContent = JSON.stringify(error) || "Unknown error completing setup"
+      return;
     }
 
     // Restart for normal use
@@ -130,8 +156,7 @@
       errorModal = true;
       errorContent = `Failed to restart application: ${innerError}. Please manually relaunch to start using the app.`;
     }
-    
-  }
+  } 
 
   async function closeApp() {
     await exit(1)
@@ -155,6 +180,19 @@
     <span class="w-full text-left mt-2">
       <Progressbar labelOutside="Progress" progress={airlinesProgressPercentage} />
       <p class="text-gray-400 italic text-sm text-left">Data found at <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://openflights.org/data.php#airline">openflights.org</a></p>
+    </span>
+  {:else if currentStep == 4}
+    <span class="w-full text-left mt-2">
+      <p class="text-white ">
+        Provide an API key from
+        <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://www.checkwxapi.com/">CheckWX API</a>
+        to be able to view METAR information for airports
+      </p>
+      <p class="italic text-gray-400 text-sm flex ">You can continue without providing an API Key - you can always add it later in <CogOutline class="mx-1" /> settings</p>
+
+      <Input class="w-48 mb-2 mt-5" bind:value={apiKey} type="password"></Input>
+
+      <Button onclick={() => {completeSetup()}}>Continue</Button>
     </span>
   {/if}
 </div>

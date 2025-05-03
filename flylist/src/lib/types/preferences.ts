@@ -1,5 +1,10 @@
+import type { TunitPreferences } from "./unitPreferences";
+
 export type Tpreferences = {
-  error_duration: number,
-  info_success_duration: number,
-  table_row_count: number
+  table_row_count: number,
+  toasts: {
+    info_success_duration: number,
+    error_duration: number,
+  }
+  units: TunitPreferences,
 }
