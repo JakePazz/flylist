@@ -177,8 +177,7 @@ export class FlyListDB {
       try {
         
         await db.execute("DELETE FROM aircraft WHERE id = $1", [aircraft.id])
-        
-        // TODO: Make this also delete any flights using this aircraft
+        await db.execute("DELETE FROM flights WHERE aircraft_id = $1", [aircraft.id])
         
         await db.close()
         return true
