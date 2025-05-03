@@ -129,7 +129,8 @@
           barometer: "hpa",
           general_distance: "metric",
           precipitation_measurement: "metric",
-          wind_speed: "kts"
+          wind_speed: "kts",
+          temperature: "celsius",
         }
       },
       metar_api: {
