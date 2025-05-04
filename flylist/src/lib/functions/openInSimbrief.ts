@@ -9,6 +9,8 @@ export function openInSimbrief(flight: Tflight) {
   const url = `https://dispatch.simbrief.com/options/custom`
   const params: { key: string, value: string }[] = []
 
+  console.info(`Opening flight (id: ${flight.id}) in simbrief`)
+
   if (flight?.company.airline_icao) {
     params.push(
       {

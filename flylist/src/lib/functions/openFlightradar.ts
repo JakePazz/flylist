@@ -8,18 +8,28 @@ import { open } from '@tauri-apps/plugin-shell';
  * @param flightNumber
  */
 export async function openFlightradar(airlineIcao: string, flightNumber: string) {
-  const airline = await FlyListDB.getAirline(airlineIcao)
-
   const toast = getToast()
-
-  if (!airline) {
+  
+  try {
+    console.info(`Opening flight in FlightRadar24 with airline icao '${airlineIcao}' and flight no. '${flightNumber}'`)
+    
+    const airline = await FlyListDB.getAirline(airlineIcao)
+    
+    if (!airline) {
+      toast.addToast({
+        title: "Not available for this flight",
+        type: "info"
+      })
+    }
+    
+    const baseUrl = "https://www.flightradar24.com/data/flights"
+    const url = `${baseUrl}/${airline.iata}${flightNumber}`
+    open(url)
+  } catch (error) {
+    console.error(`Error when opening flight in FlightRadar24: ${error}`)
     toast.addToast({
-      title: "Not available for this flight",
-      type: "info"
+      title: "Failed to open on FlightRadar24",
+      type: "error"
     })
   }
-  
-  const baseUrl = "https://www.flightradar24.com/data/flights"
-  const url = `${baseUrl}/${airline.iata}${flightNumber}`
-  open(url)
 }

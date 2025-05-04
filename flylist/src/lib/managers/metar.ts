@@ -46,6 +46,8 @@ export class MetarManager {
         }
       }
 
+      console.info(`Fetching new METAR data for ${icao}`)
+
       const apiKey = await this.getAPIKey()
 
       // Do not continue if no api key provided

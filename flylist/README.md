@@ -70,7 +70,7 @@ Features that could be useful that could be added in the future
 - [X] Add confirm modal to delete action in /flights/list
 - [X] Update /setup to work with changes made to settings management
 - [X] Improve documentation & Commenting
-- [ ] Improve logging
+- [X] Improve logging
 - [ ] Add information section to settings
   - Report issues
   - Where to find information
