@@ -11,11 +11,13 @@
   import { MetarManager } from "$lib/managers/metar";
   import { relaunch } from "@tauri-apps/plugin-process";
   import ExternalLink from "$lib/components/ExternalLink.svelte";
+  import { getVersion } from "@tauri-apps/api/app";
   
   const toast = getToast()
 
   let aircraft = $state<Taircraft[]>([])
   let showAPIKey = $state(false)
+  let appVersion = $state("")
 
   const EMPTY_AIRCRAFT = {
     id: 0,
@@ -50,6 +52,9 @@
   onMount(async () => {
     // All settings and preferences
     fetchSettings()
+
+    // Get app version
+    appVersion = await getVersion()
 
     // Aircraft
     await refreshAircraft(false)
@@ -583,7 +588,7 @@
         </Table>
       </TabItem>
 
-      <TabItem title="Information">
+      <TabItem open title="Information">
 
         <p class="text-gray-300 mb-2">
           Created by me, <ExternalLink link="https://jakepazzard.dev" >Jake Pazzard</ExternalLink>,
@@ -604,7 +609,7 @@
           <Li><ExternalLink class="text-gray-200" style="alternative" link="https://www.checkwxapi.com/">CheckWX API (metar)</ExternalLink></Li>
         </List>
 
-        <h3 class="text-xl mb-2 font-medium text-gray-200 w-full mt-4">Licensing</h3>
+        <h3 class="text-xl font-medium text-gray-200 w-full mt-4">Licensing</h3>
         <p class="text-gray-300">Licensed under <ExternalLink link="https://www.gnu.org/licenses/agpl-3.0.en.html">AGPL v3</ExternalLink>. Find the source code at <ExternalLink link="https://github.com/JakePazz/flylist">https://github.com/JakePazz/flylist</ExternalLink>.</p>
         <div class="flex flex-col gap-2 my-4 text-gray-400 max-w-[600px]">
           <p>
@@ -624,7 +629,10 @@
             along with this program.  If not, see <ExternalLink style="alternative" link="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</ExternalLink>
           </p>
         </div>
-        <p class="text-gray-200 font-medium mt-4">Copyright &copy; 2025  Jake Pazzard</p>
+        <span class="flex gap-3 justify-between items-center mt-4">
+          <p class="text-gray-200 font-medium">Copyright &copy; 2025  Jake Pazzard</p>
+          <p class="text-gray-400 italic font-medium">FlyList Version: {appVersion}</p>
+        </span>
         
       </TabItem>
     </Tabs>
