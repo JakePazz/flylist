@@ -75,4 +75,4 @@ Features that could be useful that could be added in the future
   - Report issues
   - Licensing
   - Credits
-- [ ] Create icon (google for command)
+- [X] Create icon (google for command)

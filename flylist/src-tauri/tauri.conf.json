@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "flylist",
+  "productName": "FlyList",
   "version": "0.1.0",
   "identifier": "com.flylist.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "flylist",
+        "title": "FlyList",
         "width": 1500,
         "height": 800,
         "minWidth": 1500,
