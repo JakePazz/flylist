@@ -1,7 +1,7 @@
 <script lang="ts">
   import { convertContinent } from "$lib/functions/convertContinent";
   import type { Tairport } from "$lib/types/airport";
-  import { Button, Card, DropdownDivider, Spinner, Tooltip } from "flowbite-svelte";
+  import { Button, Card, DropdownDivider, Popover, Spinner, Tooltip } from "flowbite-svelte";
   import { CheckOutline, ClipboardCleanOutline, ClockOutline, GlobeOutline, MapPinAltOutline, RefreshOutline } from "flowbite-svelte-icons";
   import Cloud from "$lib/assets/hugeicons/Cloud.svg"
   import { open } from '@tauri-apps/plugin-shell';
@@ -116,7 +116,9 @@
   async function forceMetarReload() {
     try {
       if (!airport.icao_code) throw "No 'icao_code' on airport"
-      metar = await MetarManager.get(airport.icao_code, true)
+      
+      await loadMetar()
+
       toast.addToast({
         title: `Reloaded ${airport.icao_code} METAR`,
         type: "info"
@@ -283,13 +285,16 @@
       </div>
       {/if}
       
+    {/key}
       <DropdownDivider class="mt-4 mb-3 !bg-gray-700" />
       <div class="flex justify-between items-center gap-2">
         <span class="flex items-center gap-1">
           <ClockOutline />
-          <p class="text-sm text-gray-400 font-medium italic">
-            Observed {new Date(metar.observed).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: "UTC" })}Z
-          </p>
+          {#key metar}
+            <p class="text-sm text-gray-400 font-medium italic">
+              Observed {new Date(metar.observed).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: "UTC" })}Z
+            </p>
+          {/key}
         </span>
         <Tooltip>METAR observation time in UTC</Tooltip>
 
@@ -300,7 +305,6 @@
           <Tooltip>Copy METAR to Clipboard</Tooltip>
         </span>
       </div>
-    {/key}
     
   {:else if !metar && loadingMetar}
     <span class="w-full mt-7 mb-3 mx-auto text-center">
