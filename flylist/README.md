@@ -43,7 +43,7 @@ Features that could be useful that could be added in the future
   - Hard Reset Btn for all settings
 - Scheduling of Flights
 - GSX Profile scanner integration? Check if a GSX profile is available for an airport
-- Updater
+- Updater w/ Changelog tab in settings to show current version and newest version as well as history of changelog
 
 ## TODO
 
@@ -71,9 +71,8 @@ Features that could be useful that could be added in the future
 - [X] Update /setup to work with changes made to settings management
 - [X] Improve documentation & Commenting
 - [X] Improve logging
-- [ ] Add information section to settings
+- [X] Add information section to settings
   - Report issues
-  - Where to find information
   - Licensing
   - Credits
 - [ ] Create icon (google for command)

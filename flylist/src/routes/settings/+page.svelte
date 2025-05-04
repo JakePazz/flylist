@@ -3,7 +3,7 @@
   import { formatDate } from "$lib/functions/formatDate";
   import { getToast } from "$lib/stores/toast.svelte";
   import { type Taircraft } from "$lib/types/aircraft";
-  import { Button, Dropdown, Input, Label, Modal, Radio, TabItem, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tabs, Tooltip } from "flowbite-svelte";
+  import { Button, Dropdown, Input, Label, Li, List, Modal, Radio, TabItem, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tabs, Tooltip } from "flowbite-svelte";
   import { ArrowsRepeatOutline, ChevronDownOutline, CloseOutline, EyeOutline, FireOutline, FloppyDiskOutline, PlusOutline, TrashBinOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
   import type { Tsettings } from "$lib/types/settings";
@@ -581,6 +581,51 @@
             </TableBodyCell>
           </TableBodyRow>
         </Table>
+      </TabItem>
+
+      <TabItem title="Information">
+
+        <p class="text-gray-300 mb-2">
+          Created by me, <ExternalLink link="https://jakepazzard.dev" >Jake Pazzard</ExternalLink>,
+          using <ExternalLink style="alternative" link="https://svelte.dev/">Svelte</ExternalLink>,
+          <ExternalLink style="alternative" link="https://tauri.app/">Tauri</ExternalLink>,
+          <ExternalLink style="alternative" link="https://flowbite-svelte.com/">Flowbite Svelte</ExternalLink>
+           & <ExternalLink style="alternative" link="https://hugeicons.com/">Hugeicons</ExternalLink>.
+        </p>
+        
+        <h3 class="text-xl font-medium text-gray-200 w-full mt-2">Report an Issue</h3>
+        <p class="text-gray-300 mb-2">Found an issue? Report it to <ExternalLink link="mailto:contact@jakepazzard.dev">contact@jakepazzard.dev</ExternalLink>. I'm also open to feature suggestions!</p>
+          
+        <h3 class="text-xl font-medium text-gray-200 w-full mt-4">Data</h3>
+        <p class="text-gray-300 ">All data is stored locally on your device. Some data is stored and/or fetched from</p>
+        <List list="none" class="pl-8">
+          <Li><ExternalLink class="text-gray-200" style="alternative" link="https://ourairports.com/data/">OurAirports (airports)</ExternalLink></Li>
+          <Li><ExternalLink class="text-gray-200" style="alternative" link="https://openflights.org/data.php#airline">OpenFlights (airlines)</ExternalLink></Li>
+          <Li><ExternalLink class="text-gray-200" style="alternative" link="https://www.checkwxapi.com/">CheckWX API (metar)</ExternalLink></Li>
+        </List>
+
+        <h3 class="text-xl mb-2 font-medium text-gray-200 w-full mt-4">Licensing</h3>
+        <p class="text-gray-300">Licensed under <ExternalLink link="https://www.gnu.org/licenses/agpl-3.0.en.html">AGPL v3</ExternalLink>. Find the source code at <ExternalLink link="https://github.com/JakePazz/flylist">https://github.com/JakePazz/flylist</ExternalLink>.</p>
+        <div class="flex flex-col gap-2 my-4 text-gray-400 max-w-[600px]">
+          <p>
+            This program is free software: you can redistribute it and/or modify
+            it under the terms of the GNU Affero General Public License as
+            published by the Free Software Foundation, either version 3 of the
+            License, or any later version.
+          </p>
+          <p>
+            This program is distributed in the hope that it will be useful,
+            but WITHOUT ANY WARRANTY; without even the implied warranty of
+            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+            GNU Affero General Public License for more details.
+          </p>
+          <p>
+            You should have received a copy of the GNU Affero General Public License
+            along with this program.  If not, see <ExternalLink style="alternative" link="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</ExternalLink>
+          </p>
+        </div>
+        <p class="text-gray-200 font-medium mt-4">Copyright &copy; 2025  Jake Pazzard</p>
+        
       </TabItem>
     </Tabs>
 {/key}
