@@ -10,6 +10,7 @@
   import { SettingsManager } from "$lib/managers/settings";
   import { MetarManager } from "$lib/managers/metar";
   import { relaunch } from "@tauri-apps/plugin-process";
+  import ExternalLink from "$lib/components/ExternalLink.svelte";
   
   const toast = getToast()
 
@@ -486,7 +487,7 @@
           <div class="flex justify-between items-center w-full">
             <span class="flex flex-col gap-2 ">
               <h3 class="text-white mr-6">API Key</h3>
-              <p class="text-gray-500 mr-4">Provide an API Key from <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://www.checkwxapi.com/">CheckWX</a> to receive METAR information for your airports in expanded view. Do not share this API key with others.</p>
+              <p class="text-gray-500 mr-4">Provide an API Key from <ExternalLink link="https://www.checkwxapi.com/">CheckWX</ExternalLink> to receive METAR information for your airports in expanded view. Do not share this API key with others.</p>
             </span>
 
             <span class="flex gap-2 items-center">
@@ -514,10 +515,10 @@
             </span>
 
             <span class="flex items-center gap-3 justify-end">
-              <Button onclick={() => {deleteMetarCache()}} size="sm" color="alternative"> <TrashBinOutline class="mr-1"/> Delete Cache</Button>
+              <Button class="text-nowrap" onclick={() => {deleteMetarCache()}} size="sm" color="alternative"> <TrashBinOutline class="mr-1"/> Delete Cache</Button>
               <Tooltip>Deletes entire cache & restarts app</Tooltip>
 
-              <Button onclick={() => {cleanupMetarCache()}} size="sm" color="alternative"> <CloseOutline class="mr-1"/> Cleanup Cache</Button>
+              <Button class="text-nowrap" onclick={() => {cleanupMetarCache()}} size="sm" color="alternative"> <CloseOutline class="mr-1"/> Cleanup Cache</Button>
               <Tooltip>Removes all out of date cache entries</Tooltip>
             </span>
           </div>

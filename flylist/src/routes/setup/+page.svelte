@@ -11,6 +11,7 @@
   import { processCSV } from "$lib/functions/processCSV";
   import { SettingsManager } from "$lib/managers/settings";
   import { CogOutline } from "flowbite-svelte-icons";
+  import ExternalLink from "$lib/components/ExternalLink.svelte";
 
 
   let message: string = $state("We're setting everything up for you...")
@@ -176,18 +177,18 @@
   {#if currentStep == 2}
     <span class="w-full text-left mt-2">
       <Progressbar labelOutside="Progress" progress={airportsProgressPercentage} />
-      <p class="text-gray-400 italic text-sm text-left">Data found at <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://ourairports.com/data/">ourairports.com</a></p>
+      <p class="text-gray-400 italic text-sm text-left">Data found at <ExternalLink link="https://ourairports.com/data/">ourairports.com</ExternalLink></p>
     </span>
   {:else if currentStep == 3}
     <span class="w-full text-left mt-2">
       <Progressbar labelOutside="Progress" progress={airlinesProgressPercentage} />
-      <p class="text-gray-400 italic text-sm text-left">Data found at <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://openflights.org/data.php#airline">openflights.org</a></p>
+      <p class="text-gray-400 italic text-sm text-left">Data found at <ExternalLink link="https://openflights.org/data.php#airline">openflights.org</ExternalLink></p>
     </span>
   {:else if currentStep == 4}
     <span class="w-full text-left mt-2">
       <p class="text-white ">
         Provide an API key from
-        <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" target="_blank" href="https://www.checkwxapi.com/">CheckWX API</a>
+        <ExternalLink link="https://www.checkwxapi.com/">CheckWX API</ExternalLink>
         to be able to view METAR information for airports
       </p>
       <p class="italic text-gray-400 text-sm flex ">You can continue without providing an API Key - you can always add it later in <CogOutline class="mx-1" /> settings</p>

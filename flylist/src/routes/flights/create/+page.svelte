@@ -7,6 +7,7 @@
   import type { Taircraft } from '$lib/types/aircraft';
   import { getToast } from '$lib/stores/toast.svelte';
   import { goto } from '$app/navigation';
+  import ExternalLink from '$lib/components/ExternalLink.svelte';
 
   let aircrafts: Taircraft[] = $state([])
   let flightInputs: Tflight | undefined = $state({
@@ -207,7 +208,7 @@
             <Input id="callsign" placeholder="BAW456" bind:value={flightInputs.company.callsign}/>
           </span>
         </span>
-        <Helper class="text-sm mt-1">Find an airline's ICAO code <a href="https://www.avcodes.co.uk/airlcodesearch.asp" target="_blank" class="font-medium text-primary-600 hover:underline dark:text-primary-500">here</a></Helper>
+        <Helper class="text-sm mt-1">Find an airline's ICAO code <ExternalLink link="https://www.avcodes.co.uk/airlcodesearch.asp">here</ExternalLink> </Helper>
       </div>
 
       <div class="flex gap-6 ">
