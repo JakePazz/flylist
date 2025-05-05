@@ -58,6 +58,10 @@
         }
       } catch (error) {
         console.error(`Error loading airport data for flight ${i+1}:`, error)
+        toast.addToast({
+          title: `Error loading airport data for flight ${i+1}: ${error}`,
+          type: "error"
+        })
       }
     }
 
@@ -164,6 +168,10 @@
       await refreshFlights(false) 
     } catch (error) {
       console.error(error)
+      toast.addToast({
+        title: "Error when saving edits to flight",
+        type: "error"
+      })
     }
   }
 
@@ -285,45 +293,50 @@
               <TableBodyCell><span id="dep-airport-{item.id}">{item.route.dep_airport}</span></TableBodyCell>
               <TableBodyCell><span id="arr-airport-{item.id}">{item.route.arr_airport}</span></TableBodyCell>
               <TableBodyCell>{item.company.callsign}</TableBodyCell>
-              <TableBodyCell> <Button class="px-2 py-0.5 hover:cursor-pointer" onclick={async () => { await openFlightradar(item.company.airline_icao, item.company.fl_no) }} color="alternative" >{item.company.fl_no}</Button> </TableBodyCell>
+              <TableBodyCell><Button class="px-2 py-0.5 hover:cursor-pointer" onclick={async () => { await openFlightradar(item.company.airline_icao, item.company.fl_no) }} color="alternative" >{item.company.fl_no}</Button></TableBodyCell>
               <TableBodyCell><span id="aircraft-name-{item.id}">{item.aircraft.name}</span></TableBodyCell>
-              
               <TableBodyCell>{formatDuration(item.duration)}</TableBodyCell>
-              <TableBodyCell>
-                <DotsHorizontalOutline class="dots-menu-{item.id} dark:text-white"/>
-                <Dropdown triggeredBy=".dots-menu-{item.id}">
-                  <div slot="header" class="px-4 py-2 flex flex-col">
-                    <span class="text-sm text-gray-400 italic flex items-center justify-between">Last Edited <EditOutline class="w-4 h-4" /></span>
-                    <span>{formatDate(new Date(item.last_edited))}</span>
-                    <span class="text-sm text-gray-400 italic flex items-center justify-between">Created At <CirclePlusOutline class="w-4 h-4" /></span>
-                    <span>{formatDate(new Date(item.created_at))}</span>
-                  </div>
-                  <DropdownItem onclick={async () => {await openEditModal(item)}} class="flex gap-2"> <EditOutline /> Edit</DropdownItem>
-                  <DropdownItem onclick={async () => {await archiveFlight(item)}} class="flex gap-2"> <ArchiveOutline/> Archive</DropdownItem>
-                  <DropdownDivider />
-                  <DropdownItem onclick={async () => {await deleteFlight(item)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
-                </Dropdown>
-              </TableBodyCell>
-
-              <Popover placement="right" triggeredBy="#aircraft-name-{item.id}" title={item.aircraft.name}>
-                <div class="flex gap-4">
-                  <span>
-                    <Label class="font-medium !text-gray-500 italic">Model</Label>
-                    <p class="font-medium text-gray-300">{item.aircraft.model}</p>
-                  </span>
-                  <span>
-                    <Label class="font-medium !text-gray-500 italic">ICAO</Label>
-                    <p class="font-medium text-gray-300">{item.aircraft.icao_code}</p>
-                  </span>
-                </div>
-                <Label class="font-medium !text-gray-500 italic">Manufacturer</Label>
-                <p class="font-medium text-gray-300">{item.aircraft.manufacturer}</p>
-              </Popover>
-              <Popover placement="left" triggeredBy="#arr-airport-{item.id}">{item.complete_route ? item.complete_route.arr_airport.name : "Not Available"}</Popover>
-              <Popover placement="left" triggeredBy="#dep-airport-{item.id}">{item.complete_route ? item.complete_route.dep_airport.name : "Not Available"}</Popover>
+              <TableBodyCell><DotsHorizontalOutline class="dots-menu-{item.id} dark:text-white"/></TableBodyCell>
             </TableBodyRow>
           </TableBody>
         </Table>
+
+        <!-- Create page's popover elements for each flight -->
+        {#key currentPageFlights}
+          {#each currentPageFlights as flight}
+            <Popover placement="left" triggeredBy="#arr-airport-{flight.id}">{flight.complete_route ? flight.complete_route.arr_airport.name : "Not Available"}</Popover>
+            <Popover placement="left" triggeredBy="#dep-airport-{flight.id}">{flight.complete_route ? flight.complete_route.dep_airport.name : "Not Available"}</Popover>
+
+            <Popover placement="right" triggeredBy="#aircraft-name-{flight.id}" title={flight.aircraft.name}>
+              <div class="flex gap-4">
+                <span>
+                  <Label class="font-medium !text-gray-500 italic">Model</Label>
+                  <p class="font-medium text-gray-300">{flight.aircraft.model}</p>
+                </span>
+                <span>
+                  <Label class="font-medium !text-gray-500 italic">ICAO</Label>
+                  <p class="font-medium text-gray-300">{flight.aircraft.icao_code}</p>
+                </span>
+              </div>
+              <Label class="font-medium !text-gray-500 italic">Manufacturer</Label>
+              <p class="font-medium text-gray-300">{flight.aircraft.manufacturer}</p>
+            </Popover>
+
+            <Dropdown placement="bottom" triggeredBy=".dots-menu-{flight.id}">
+              <div slot="header" class="px-4 py-2 flex flex-col">
+                <span class="text-sm text-gray-400 font-medium italic flex items-center justify-between">Last Edited <EditOutline class="w-4 h-4" /></span>
+                <span class="text-sm text-gray-300">{formatDate(new Date(flight.last_edited))} {flight.id}</span>
+                <span class="text-sm text-gray-400 font-medium italic flex items-center justify-between">Created At <CirclePlusOutline class="w-4 h-4" /></span>
+                <span class="text-sm text-gray-300">{formatDate(new Date(flight.created_at))}</span>
+              </div>
+              <DropdownItem onclick={async () => {await openEditModal(flight)}} class="flex gap-2"> <EditOutline /> Edit</DropdownItem>
+              <DropdownItem onclick={async () => {await archiveFlight(flight)}} class="flex gap-2"> <ArchiveOutline/> Archive</DropdownItem>
+              <DropdownDivider />
+              <DropdownItem onclick={async () => {await deleteFlight(flight)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
+            </Dropdown>
+
+          {/each}
+        {/key}
 
         <!-- Occupy blank space to push btns and pagination to bottom of page -->
         <span class="flex-1"></span>

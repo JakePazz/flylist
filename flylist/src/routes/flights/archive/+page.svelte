@@ -173,7 +173,6 @@
   {/key}
 {:else}
   <div class="flex-1 flex justify-center items-center flex-col gap-3">
-    <h2 class="tet-lg italic font-medium text-gray-600">No existing flights found</h2>
-    <Button href="/flights/create" size="sm">Create a Flight</Button>
+    <h2 class="tet-lg italic font-medium text-gray-600">No archived flights</h2>
   </div>
 {/if}

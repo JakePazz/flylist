@@ -153,6 +153,10 @@
 
     } catch (error) {
       console.error(error)
+      toast.addToast({
+        title: "Error when creating flight, please try again",
+        type: "error"
+      })
     }
   }
 
@@ -227,7 +231,7 @@
             </Dropdown>
           {/key}
           
-          <Helper class="text-sm mt-1">Update your available aircraft in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
+          <Helper class="text-sm mt-1">Update your aircraft in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
         </span>
 
         
@@ -243,7 +247,6 @@
       </div>
 
       <Button onclick={createFlight}> <CreditCardPlusAltOutline class="w-5 h-5 me-2" /> Create Flight</Button>
-
     </form>
   </Card>
 </span>

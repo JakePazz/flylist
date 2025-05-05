@@ -17,7 +17,7 @@ pub fn run() {
                 flight_num TEXT NOT NULL,
                 callsign TEXT NOT NULL,
                 airline_icao TEXT NOT NULL,
-                aircraft INTEGER NOT NULL,
+                aircraft_id INTEGER NOT NULL,
                 duration INTEGER NOT NULL,
                 archived BOOLEAN DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

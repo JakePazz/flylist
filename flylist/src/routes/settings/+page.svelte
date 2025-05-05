@@ -119,6 +119,10 @@
       })
     } catch (error) {
       console.error(error)
+      toast.addToast({
+        title: "Error when resetting preferences",
+        type: "error"
+      })
     }
   }
 

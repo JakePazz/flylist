@@ -80,6 +80,10 @@
       open(`https://www.google.com/maps/search/?api=1&query=${lat},${long}`)
     } catch (error) {
       console.error(`Error calling openInGoogleMaps(): ${error}`)
+      toast.addToast({
+        title: `Error calling openInGoogleMaps(): ${error}`,
+        type: "error"
+      })
     }
   }
 

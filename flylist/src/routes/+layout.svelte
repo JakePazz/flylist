@@ -25,34 +25,46 @@
   let layoutReady = $state(false)
 
   onMount(async () => {
+
+    await new Promise(resolve => setTimeout(resolve, 500)) // Wait for tauri load
+
+    // If /setup disable sidebar and return
+    if (window.location.pathname === "/setup") {
+      layoutReady = true
+      disableSidebar = true
+      return
+    }
+
     try {
-
-      await new Promise(resolve => setTimeout(resolve, 500)) // Wait for tauri load
-
-      if (window.location.pathname === "/setup") {
-        layoutReady = true
-        disableSidebar = true
-        return
-      }
-
       // Check if setup is complete
       const settings = await load("settings.json")
       const complete = await settings.get<boolean>("setup_complete")
-      
+
       if (!complete) {
         await goto('/setup')
-      } else {
-        // Load flight count and other data only if setup is complete
-        const flights = await FlyListDB.getFlights()
-        const activeFlights = flights.filter((flight) => flight.archived === false)
-        
-        if (activeFlights.length > 0) {
-          flightCount = activeFlights.length
-        }
+      }
+      
+    } catch {
+      toast.addToast({
+        title: "Failed to fetch settings to check setup status",
+        type: "error"
+      })
+    }
 
+    try {
+      // Load flight count and other data only if setup is complete
+      const flights = await FlyListDB.getFlights()
+      const activeFlights = flights.filter((flight) => flight.archived === false)
+      
+      if (activeFlights.length > 0) {
+        flightCount = activeFlights.length
       }
     } catch (error) {
-      console.error("Error onMount() of layout:", error)
+      console.error(error)
+      toast.addToast({
+        title: "Failed to load flight count",
+        type: "error"
+      })
     }
 
     // Remove out of date airports in metar_cache.json
@@ -60,6 +72,10 @@
       await MetarManager.cleanupCache()
     } catch (error) {
       console.warn(`Failed to cleanup 'metar_cache.json' due to an error: ${error}`)
+      toast.addToast({
+        title: `Failed to cleanup 'metar_cache.json' due to an error`,
+        type: "error"
+      })
     }
 
     // Test CheckWX API key validity
@@ -151,9 +167,11 @@
             <ListOutline class="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
           </svelte:fragment>
           <svelte:fragment slot="subtext">
+          {#key flightCount}
             {#if flightCount > 0}
-              <span class="inline-flex justify-center items-center p-3 ms-3 w-3 h-3 text-sm font-medium text-primary-600 bg-primary-200 rounded-full dark:bg-primary-900 dark:text-primary-200"> {flightCount} </span>
+            <span class="inline-flex justify-center items-center p-3 ms-3 w-3 h-3 text-sm font-medium text-primary-600 bg-primary-200 rounded-full dark:bg-primary-900 dark:text-primary-200"> {flightCount} </span>
             {/if}
+          {/key}
           </svelte:fragment>
         </SidebarItem>
 
