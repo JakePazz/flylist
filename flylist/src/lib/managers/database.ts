@@ -30,7 +30,7 @@ export class FlyListDB {
    * @returns
    */
   static async createFlight(data: Tflight): Promise<boolean> {
-    return withConnection(async (db) => {
+    return this.withConnection(async (db) => {
       try {
         
         await db.execute("INSERT INTO flights (dep_airport, arr_airport, flight_num, callsign, aircraft_id, duration, airline_icao) VALUES ($1, $2, $3, $4, $5, $6, $7)", [
