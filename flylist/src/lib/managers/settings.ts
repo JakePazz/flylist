@@ -3,7 +3,6 @@ import type { Tpreferences } from "$lib/types/preferences";
 import type { TmetarAPISettings } from "$lib/types/metarAPISettings";
 
 export class SettingsManager {
-  private static store: Store | null = null;
 
   // Default values
   private static readonly DEFAULT_PREFERENCES: Tpreferences = {
@@ -32,12 +31,10 @@ export class SettingsManager {
    * @returns Promise resolving to the result of the operation
    */
   private static async withStore<T>(operation: (store: Store) => Promise<T>): Promise<T> {
-    if (!this.store) {
-      this.store = await load("settings.json")
-    }
+    const store = await load("settings.json")
     
     try {
-      return await operation(this.store)
+      return await operation(store)
     } catch (error) {
       console.error("Settings store operation failed:", error)
       throw new Error(`Error during settings operation: ${error}`)
