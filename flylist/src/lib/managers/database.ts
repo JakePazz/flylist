@@ -372,6 +372,31 @@ export class FlyListDB {
   }
 
   /**
+   * Clear all tables within the database
+   * @returns Promise resolving to true if successful
+   */
+  static async clearDatabase(): Promise<boolean> {
+    return this.withConnection(async (db) => {
+      try {
+        // Get a list of all tables
+        const result = await db.select<{ name: string }[]>(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_sqlx_%'"
+        );
+
+        // Clear each table
+        for (const table of result) {
+          await db.execute(`DELETE FROM ${table.name}`);
+        }
+        
+        return true;
+      } catch (error) {
+        console.error("Error when clearing database:", error);
+        throw new Error(`Failed to clear database: ${error}`);
+      }
+    });
+  }
+
+  /**
    * Convert a Tflight value to TdbFlight to be able to send back to DB
    * @param flight
    * @returns

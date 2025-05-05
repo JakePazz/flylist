@@ -77,6 +77,9 @@
       message = "Importing airports data from ourairports.com"
       currentStep = 2
 
+      // Clear contents of each database table before inserting new data from csv files
+      await FlyListDB.clearDatabase()
+
       // Create 'airports' table from online airports data
       const airportsResult = await processCSV({
         url: airportsUrl,
