@@ -588,7 +588,7 @@
         </Table>
       </TabItem>
 
-      <TabItem open title="Information">
+      <TabItem title="Information">
 
         <p class="text-gray-300 mb-2">
           Created by me, <ExternalLink link="https://jakepazzard.dev" >Jake Pazzard</ExternalLink>,
