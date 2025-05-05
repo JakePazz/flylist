@@ -325,7 +325,7 @@
             <Dropdown placement="bottom" triggeredBy=".dots-menu-{flight.id}">
               <div slot="header" class="px-4 py-2 flex flex-col">
                 <span class="text-sm text-gray-400 font-medium italic flex items-center justify-between">Last Edited <EditOutline class="w-4 h-4" /></span>
-                <span class="text-sm text-gray-300">{formatDate(new Date(flight.last_edited))} {flight.id}</span>
+                <span class="text-sm text-gray-300">{formatDate(new Date(flight.last_edited))}</span>
                 <span class="text-sm text-gray-400 font-medium italic flex items-center justify-between">Created At <CirclePlusOutline class="w-4 h-4" /></span>
                 <span class="text-sm text-gray-300">{formatDate(new Date(flight.created_at))}</span>
               </div>
