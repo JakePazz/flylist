@@ -26,6 +26,8 @@
 
     const complete = await settings.get<boolean>("setup_complete")
 
+    settings.close()
+
     // Final check that setup is required - back to '/' if not req.
     if (complete) {
       goto("/") 
@@ -41,7 +43,7 @@
   let airportsProgressPercentage = $state(0)
   let airlinesProgressPercentage = $state(0)
 
-  let steps = ["Create settings.json", "Download airports data", "Download airlines data", "Configuration", "Setup complete"]
+  let steps = ["Create settings.json", "Download airports data", "Download airlines data", "Configuration"]
 
   async function setup() {
 
@@ -89,7 +91,7 @@
         setProgress: (percentage) => { airportsProgressPercentage = percentage; },
         updateMessage: (msg) => { message = msg; },
         hasHeaders: true,
-      });
+      })
 
       if (!airportsResult.success) {
         errorModal = true
@@ -110,7 +112,7 @@
         setProgress: (percentage) => { airlinesProgressPercentage = percentage; },
         updateMessage: (msg) => { message = msg; },
         hasHeaders: false,
-      });
+      })
 
       if (!airlinesResult.success) {
         errorModal = true
@@ -134,24 +136,23 @@
 
   async function completeSetup() {
     try {
-
-      if (apiKey != "") {
-        await SettingsManager.saveMetarAPISettings({
+      const settings = await load("settings.json")
+      
+      if (apiKey !== "") {
+        // Set the METAR settings directly on store
+        await settings.set("metar_api", {
           cacheOutdatedAgeMinutes: 30,
           key: apiKey
         })
       }
 
-      // Setup is complete
-      currentStep = 5;
-      
-      // Mark setup as complete in settings
-      await SettingsManager.saveSetting("setup_complete", true)
+      await settings.set("setup_complete", true)
+      await settings.save()
     } catch (error) {
       console.error(error)
       errorModal = true
       errorContent = JSON.stringify(error) || "Unknown error completing setup"
-      return;
+      return
     }
 
     // Restart for normal use
