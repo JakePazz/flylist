@@ -60,6 +60,8 @@
           info_success_duration: 1500
         },
         table_row_count: 10,
+        duration_filter_button_interval: 15,
+        duration_filter_scroll_interval: 5,
         units: {
           altitude: "feet",
           barometer: "hpa",
