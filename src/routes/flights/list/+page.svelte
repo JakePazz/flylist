@@ -1,8 +1,8 @@
 <script lang="ts">
   import { FlyListDB } from "$lib/managers/database";
   import type { Tflight } from "$lib/types/flight";
-  import { Button, Card, Dropdown, DropdownDivider, DropdownItem, Input, Label, Modal, P, Pagination, Popover, Radio, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tooltip } from "flowbite-svelte";
-  import { AngleLeftOutline, ArchiveOutline, ChevronDownOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FireOutline, FloppyDiskOutline, GlobeOutline, MapPinAltOutline, RefreshOutline, UserHeadsetOutline } from "flowbite-svelte-icons";
+  import { Button, ButtonGroup, Card, Checkbox, Dropdown, DropdownDivider, DropdownItem, Input, InputAddon, Label, Modal, P, Pagination, Popover, Radio, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tooltip } from "flowbite-svelte";
+  import { AngleLeftOutline, ArchiveOutline, ChevronDownOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FilterOutline, FireOutline, FloppyDiskOutline, GlobeOutline, HomeOutline, MapPinAltOutline, MinusOutline, PlusOutline, RefreshOutline, TrashBinOutline, UserHeadsetOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
   import { getToast } from "$lib/stores/toast.svelte";
   import { formatDuration } from "$lib/functions/formatDuration";
@@ -15,24 +15,36 @@
   import { openInSimbrief } from "$lib/functions/openInSimbrief";
   import AirportCard from "$lib/components/AirportCard.svelte";
   import AirplaneSeat from "$lib/assets/hugeicons/AirplaneSeat.svg";
+  import AirportList from "$lib/components/AirportList.svelte";
+  import type { TflightFilters } from "$lib/types/filters";
+  import type { TairportCategory } from "$lib/types/airportCategory";
+  import AirlineList from "$lib/components/AirlineList.svelte";
+  import { SettingsManager } from "$lib/managers/settings";
   
   let flights: Tflight[] = $state([])
+  let aircrafts: Taircraft[] = $state([])
   let currentPageFlights: Tflight[] = $state([])
   let pages: { name: string, active: boolean }[] = $state([])
   let tableRowCount: number = $state(10)
+  let durationFilters: { button: number, scroll: number } = $state({
+    button: 15,
+    scroll: 5,
+  })
   
   const toast = getToast()
 
   onMount(async () => {
+    aircrafts = await FlyListDB.getAircraft()
+    flightFilters.aircraftIds = aircrafts.map((ac: Taircraft) => {return ac.id })
+
     await refreshFlights(false)
 
-    // Get preferences for toast duration before autohide
-    const settings = await load("settings.json")
-    const preferences = await settings.get<Tpreferences>("preferences")
-    tableRowCount = preferences?.table_row_count || 10
-
-    // Get aircraft and default dropdown to first one in array
-    aircrafts = await FlyListDB.getAircraft()
+    const preferences = await SettingsManager.getPreferences()
+    tableRowCount = preferences.table_row_count || 10
+    durationFilters = {
+      button: preferences.duration_filter_button_interval,
+      scroll: preferences.duration_filter_scroll_interval
+    }
   })
 
   async function loadData() {
@@ -48,14 +60,13 @@
         const depAirport = await FlyListDB.getAirport(flight.route.dep_airport)
         const arrAirport = await FlyListDB.getAirport(flight.route.arr_airport)
         
-        // If no data for either skip
         if (!depAirport || !arrAirport) continue
         
-        // Update the flight with its airport data
         flights[i].complete_route = {
           arr_airport: arrAirport,
           dep_airport: depAirport
         }
+
       } catch (error) {
         console.error(`Error loading airport data for flight ${i+1}:`, error)
         toast.addToast({
@@ -64,6 +75,25 @@
         })
       }
     }
+
+    flights = flights.filter((flight) => {
+      if (flightFilters.airports.icaos.length > 0) {
+        const airportToCheck = flightFilters.airports.category === "arrival" ? flight.route.arr_airport : flight.route.dep_airport
+        
+        if (!flightFilters.airports.icaos.includes(airportToCheck)) {
+          return false
+        }
+      }
+      
+      if (flightFilters.airlineIcaos.length > 0 && !flightFilters.airlineIcaos.includes(flight.company.airline_icao)) return false
+      
+      if (!flightFilters.aircraftIds.includes(flight.aircraft.id)) return false
+
+      if (flightFilters.durationMins.max > 0 && (flight.duration > flightFilters.durationMins.max)) return false
+      if (flightFilters.durationMins.max > 0 && (flight.duration < flightFilters.durationMins.min)) return false
+
+      return true
+    })
 
     // Create pages to be used by <Pagination>
     pages = []
@@ -77,6 +107,7 @@
     if (pages.length > 0) {
       pages[0].active = true
     }
+
 
   }
 
@@ -236,12 +267,11 @@
   let editModalHours: number = $state(0);
   let editModalMinutes: number = $state(0);
 
-  let aircrafts: Taircraft[] = $state([])
-  let aircraftGroup = $state(1);
+  let editAircraftGroup = $state(1)
 
-  // Update aircraft based upon dropdown changes `aircraftGroup`
+  // Update aircraft based upon dropdown changes `editAircraftGroup`
   $effect(() => { 
-    const ac = aircrafts.find((ac) => ac.id === aircraftGroup)
+    const ac = aircrafts.find((ac) => ac.id === editAircraftGroup)
     if (!ac) return
 
     if (!editModalContent) return
@@ -268,6 +298,113 @@
   }
 
   let refreshCounter = $state(0)
+
+  // Filters
+
+  const defaultFilters = (): TflightFilters => {
+    return {
+      airports: {
+        category: "arrival",
+        icaos: []
+      },
+      aircraftIds: [],
+      airlineIcaos: [],
+      durationMins: {
+        min: 0,
+        max: 0,
+      }
+    }
+  }
+
+  let showFilterOptions = $state(true)
+  let flightFilters: TflightFilters = $state(defaultFilters())
+  let durationUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  function debouncedFilterRefresh() {
+    if (durationUpdateTimeoutId !== null) {
+      clearTimeout(durationUpdateTimeoutId)
+    }
+    
+    durationUpdateTimeoutId = setTimeout(() => {
+      refreshFilters()
+      durationUpdateTimeoutId = null
+    }, 600)
+  }
+
+  async function refreshFilters() {
+    await loadData()
+    await loadPage()
+  }
+
+  async function resetFiltersButton() {
+    flightFilters = defaultFilters()
+
+    flightFilters.aircraftIds = aircrafts.map((ac: Taircraft) => {return ac.id })
+    toast.addToast({
+      title: `Cleared filters`,
+      type: "success"
+    })
+    refreshFilters()
+  }
+
+  function toggleAircraftFilter(aircraft: Taircraft) {
+    if (flightFilters.aircraftIds.includes(aircraft.id)) {
+      flightFilters.aircraftIds = flightFilters.aircraftIds.filter((id) => {
+        if (id === aircraft.id) return false
+        return true
+      })
+    } else {
+      flightFilters.aircraftIds.push(aircraft.id)
+    }
+    debouncedFilterRefresh()
+  }
+
+  function adjustDuration(type: "min" | "max", amount: number) {
+
+    switch (type) {
+      case "min":
+        flightFilters.durationMins.min += amount
+        
+        if (flightFilters.durationMins.min < 0) {
+          flightFilters.durationMins.min = 0;
+        } else if (flightFilters.durationMins.min > (60 * 24)) {
+          flightFilters.durationMins.min = 60 * 24;
+        }
+        break
+      case "max":
+        flightFilters.durationMins.max += amount
+        
+        if (flightFilters.durationMins.max < 0) {
+          flightFilters.durationMins.max = 0;
+        } else if (flightFilters.durationMins.max > (60 * 24)) {
+          flightFilters.durationMins.max = 60 * 24;
+        }
+        break
+    }
+
+    debouncedFilterRefresh()
+  }
+
+  function handleDurationWheel(node: HTMLElement, callback: (amount: number) => void) {
+    function wheelHandler(event: WheelEvent) {
+      event.preventDefault()
+      
+      if (event.deltaY < 0) {
+        callback(durationFilters.scroll)
+      } else {
+        callback(-durationFilters.scroll)
+      }
+
+      debouncedFilterRefresh()
+    }
+    
+    node.addEventListener('wheel', wheelHandler, { passive: false })
+    return {
+      destroy() {
+        node.removeEventListener('wheel', wheelHandler)
+      }
+    };
+  }
 </script>
 
 
@@ -276,17 +413,115 @@
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl text-white font-bold">Your Flights</h2>
       <span class="flex gap-4">
-        <Button aria-label="Refresh Flights" onclick={() => {refreshFlights()}} size="sm" color="alternative" > <RefreshOutline /></Button>
-        <Button aria-label="Refresh Flights" onclick={() => {showExpandedSection = showExpandedSection ? false : true}} size="sm" color="alternative" >
+        {#if showFilterOptions}
+        <Button size="sm" color="dark" onclick={resetFiltersButton} > <TrashBinOutline/></Button>
+        <Tooltip>Clear Filters</Tooltip>
+        {/if}
+        <Button aria-label="Toggle display of filter options" onclick={() => {showFilterOptions = showFilterOptions ? false : true}} size="sm" color="alternative" > <FilterOutline class="{showFilterOptions ? "rotate-180" : "rotate-0"} transition-all duration-300" /></Button>
+        <Button aria-label="Refresh flights" onclick={() => {refreshFlights()}} size="sm" color="alternative" > <RefreshOutline /></Button>
+        <Tooltip>Refresh Flights</Tooltip>
+        <Button aria-label="Toggle selected flight section" onclick={() => {showExpandedSection = showExpandedSection ? false : true}} size="sm" color="alternative" >
           <AngleLeftOutline class={`transition-all duration-300 ${showExpandedSection ? "rotate-180" : ""}`} />
         </Button>
       </span>
     </div>
 
-    {#if flights.length > 0}
+    {#key flightFilters}
+    {#if showFilterOptions}
+    <div class="flex flex-col gap-4 mb-6">
+        
+        <div class="flex-1 flex flex-col gap-1">
+          <Label>Airports</Label>
+          <AirportList
+          tagLimit={12}
+          onChange={(results: {category: TairportCategory, airports: string[]}) => {
+            if (flightFilters.airports) {
+              flightFilters.airports.icaos = results.airports
+              flightFilters.airports.category = results.category
+            }
+            debouncedFilterRefresh()
+          }}
+            />
+          </div>
+          
+          <div class="flex-1 flex flex-col gap-1">
+            <Label>Airlines</Label>
+            <AirlineList
+            tagLimit={12}
+            onChange={(results: {airlines: string[]}) => {
+              flightFilters.airlineIcaos = results.airlines
+              debouncedFilterRefresh()
+            }}
+            />
+          </div>
+
+        <div class="flex gap-8 flex-wrap items-center">
+          <div class="flex gap-1 flex-col">
+            <Label>Aircraft</Label>
+            <div class="flex gap-2 w-full flex-wrap">
+              {#each aircrafts as aircraft}
+              <Button onclick={() => { toggleAircraftFilter(aircraft) }} color={flightFilters.aircraftIds.includes(aircraft.id) ? "light" : "alternative"} class="text-nowrap" pill>{aircraft.name}</Button>
+              {/each}
+            </div>
+          </div>
+          
+          <div class="flex gap-1 flex-col">
+            <Label>Duration</Label>
+            <div class="flex items-center gap-4 text-gray-400 font-medium">             
+              <div class="flex items-center">
+                <ButtonGroup>
+                  <Button class="!bg-gray-800 hover:!bg-gray-700 cursor-pointer !border-gray-600 !border-[1px]" type="button" onclick={() => ( adjustDuration("min", -durationFilters.button) )} >
+                    <MinusOutline />
+                  </Button>
+                  <span
+                    use:handleDurationWheel={(amount) => flightFilters.durationMins.min += amount}
+                    class="w-24 flex items-center justify-center font-medium text-sm text-nowrap px-4 bg-gray-700 !border-gray-600 !border-[1px] !border-l-0 !border-r-0"
+                  >
+                    {#if flightFilters.durationMins.min > 0}
+                      <p>{formatDuration(flightFilters.durationMins.min)}</p>
+                    {:else}
+                      <p>Any</p>
+                    {/if}
+                  </span>
+                  <Button class="!bg-gray-800 hover:!bg-gray-700 cursor-pointer !border-gray-600 !border-[1px]" type="button" id="increment-button" onclick={() => (adjustDuration("min", durationFilters.button))}>
+                    <PlusOutline />
+                  </Button>
+                </ButtonGroup>
+              </div>
+              
+              <p>to</p>
+
+              <div class="flex items-center">
+                <ButtonGroup>
+                  <Button class="!bg-gray-800 hover:!bg-gray-700 cursor-pointer !border-gray-600 !border-[1px]" type="button" onclick={() => ( adjustDuration("max", -durationFilters.button))} >
+                    <MinusOutline />
+                  </Button>
+                  <span
+                    use:handleDurationWheel={(amount) => flightFilters.durationMins.max += amount}
+                    class="w-24 flex items-center justify-center font-medium text-sm text-nowrap px-4 bg-gray-700 !border-gray-600 !border-[1px] !border-l-0 !border-r-0"
+                  >
+                    {#if flightFilters.durationMins.max > 0}
+                      <p>{formatDuration(flightFilters.durationMins.max)}</p>
+                    {:else}
+                      <p>Any</p>
+                    {/if}
+                  </span>
+                  <Button class="!bg-gray-800 hover:!bg-gray-700 cursor-pointer !border-gray-600 !border-[1px]" type="button" id="increment-button" onclick={() => ( adjustDuration("max", durationFilters.button) )}>
+                    <PlusOutline />
+                  </Button>
+                </ButtonGroup>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      {/if}
+      {/key}
+      
+      {#if flights.length > 0}
       {#key currentPageFlights}
-        <Table items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
-          <TableHead>
+      <Table items={currentPageFlights} shadow divClass="relative overflow-x-auto scrollbar scrollbar-thumb-gray-500 scrollbar-track-transparent">
+        <TableHead>
             <TableHeadCell sort={createSortFunction((a: Tflight, b: Tflight) => a.id - b.id)} defaultDirection="asc">ID</TableHeadCell>
             <TableHeadCell sort={createSortFunction((a: Tflight, b: Tflight) => a.route.dep_airport.localeCompare(b.route.dep_airport))}>DEP</TableHeadCell>
             <TableHeadCell sort={createSortFunction((a: Tflight, b: Tflight) => a.route.arr_airport.localeCompare(b.route.arr_airport))}>ARR</TableHeadCell>
@@ -366,6 +601,11 @@
         </span>
       {/key}
 
+    {:else if flightFilters.aircraftIds.length > 0 || flightFilters.airlineIcaos.length > 0 || flightFilters.durationMins?.max || flightFilters.airports.icaos.length > 0}
+      <div class="flex-1 flex justify-center items-center flex-col gap-3">
+        <h2 class="tet-lg italic font-medium text-gray-600">No flights found that match your filters</h2>
+        <Button onclick={resetFiltersButton} size="sm">Clear Filters</Button>
+      </div>
     {:else}
       <div class="flex-1 flex justify-center items-center flex-col gap-3">
         <h2 class="tet-lg italic font-medium text-gray-600">No existing flights found</h2>
@@ -480,14 +720,14 @@
       <div class="flex gap-6 ">
         <span class="flex-4">
           <Label>Aircraft Type</Label>
-          {#key aircraftGroup}
+          {#key editAircraftGroup}
             <Button color="alternative" class="w-max">
-              {aircrafts.find((ac) => ac.id === aircraftGroup)?.name || "Select Aircraft"} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+              {aircrafts.find((ac) => ac.id === editAircraftGroup)?.name || "Select Aircraft"} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
             </Button>
             <Dropdown class="w-44 p-3 space-y-3 text-sm">
               {#each aircrafts as aircraft}
               <li class="rounded-sm p-2 hover:bg-gray-100 dark:hover:bg-gray-600">
-                <Radio name="Aircraft Type" bind:group={aircraftGroup} value={aircraft.id}>{aircraft.name}</Radio>
+                <Radio name="Aircraft Type" bind:group={editAircraftGroup} value={aircraft.id}>{aircraft.name}</Radio>
               </li>
               {/each}
             </Dropdown>

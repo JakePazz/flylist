@@ -7,6 +7,8 @@ export class SettingsManager {
   // Default values
   private static readonly DEFAULT_PREFERENCES: Tpreferences = {
     table_row_count: 10,
+    duration_filter_button_interval: 15,
+    duration_filter_scroll_interval: 5,
     toasts: {
       info_success_duration: 1500,
       error_duration: 5000,
