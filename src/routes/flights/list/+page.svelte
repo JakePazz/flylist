@@ -86,8 +86,8 @@
       
       if (!flightFilters.aircraftIds.includes(flight.aircraft.id)) return false
 
+      if (flightFilters.durationMins.min > 0 && (flight.duration < flightFilters.durationMins.min)) return false
       if (flightFilters.durationMins.max > 0 && (flight.duration > flightFilters.durationMins.max)) return false
-      if (flightFilters.durationMins.max > 0 && (flight.duration < flightFilters.durationMins.min)) return false
 
       return true
     })
@@ -104,8 +104,6 @@
     if (pages.length > 0) {
       pages[0].active = true
     }
-
-
   }
 
   async function refreshFlights(doToast=true) {
