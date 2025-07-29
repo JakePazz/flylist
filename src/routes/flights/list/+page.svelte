@@ -603,12 +603,12 @@
 
     {:else if flightFilters.aircraftIds.length > 0 || flightFilters.airlineIcaos.length > 0 || flightFilters.durationMins?.max || flightFilters.airports.icaos.length > 0}
       <div class="flex-1 flex justify-center items-center flex-col gap-3">
-        <h2 class="tet-lg italic font-medium text-gray-600">No flights found that match your filters</h2>
+        <h2 class="text-lg italic font-medium text-gray-600">No flights found that match your filters</h2>
         <Button onclick={resetFiltersButton} size="sm">Clear Filters</Button>
       </div>
     {:else}
       <div class="flex-1 flex justify-center items-center flex-col gap-3">
-        <h2 class="tet-lg italic font-medium text-gray-600">No existing flights found</h2>
+        <h2 class="text-lg italic font-medium text-gray-600">No existing flights found</h2>
         <Button href="/flights/create" size="sm">Create a Flight</Button>
       </div>
     {/if}
