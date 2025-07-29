@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, ButtonGroup, Dropdown, DropdownItem, Input, InputAddon, MultiSelect, Tooltip } from "flowbite-svelte";
-  import { ChevronDownOutline, CloseOutline, RefreshOutline, TrashBinOutline, TrashBinSolid, UserCircleSolid } from "flowbite-svelte-icons";
+  import { Button, ButtonGroup, Input, InputAddon, Tooltip } from "flowbite-svelte";
+  import { RefreshOutline, TrashBinOutline } from "flowbite-svelte-icons";
   import AirplaneTakeoff from "$lib/assets/hugeicons/AirplaneTakeoff01.svg"
   import AirplaneLanding from "$lib/assets/hugeicons/AirplaneLanding01.svg"
   import { getToast } from "$lib/stores/toast.svelte";
@@ -15,7 +15,7 @@
   let currentInput: string = $state("")
   let airportCategory: TairportCategory = $state("arrival")
 
-  let hoveredAirportTag: number = $state(-1);
+  let hoveredAirportTag: number = $state(-1)
 
   async function addAirport() {
 

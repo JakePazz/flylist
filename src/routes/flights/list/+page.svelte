@@ -1,14 +1,12 @@
 <script lang="ts">
   import { FlyListDB } from "$lib/managers/database";
   import type { Tflight } from "$lib/types/flight";
-  import { Button, ButtonGroup, Card, Checkbox, Dropdown, DropdownDivider, DropdownItem, Input, InputAddon, Label, Modal, P, Pagination, Popover, Radio, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tooltip } from "flowbite-svelte";
-  import { AngleLeftOutline, ArchiveOutline, ChevronDownOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FilterOutline, FireOutline, FloppyDiskOutline, GlobeOutline, HomeOutline, MapPinAltOutline, MinusOutline, PlusOutline, RefreshOutline, TrashBinOutline, UserHeadsetOutline } from "flowbite-svelte-icons";
+  import { Button, ButtonGroup, Card, Dropdown, DropdownDivider, DropdownItem, Input, Label, Modal, Pagination, Popover, Radio, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Tooltip } from "flowbite-svelte";
+  import { AngleLeftOutline, ArchiveOutline, ChevronDownOutline, ChevronLeftOutline, ChevronRightOutline, CirclePlusOutline, DotsHorizontalOutline, EditOutline, FilterOutline, FireOutline, FloppyDiskOutline, MinusOutline, PlusOutline, RefreshOutline, TrashBinOutline, UserHeadsetOutline } from "flowbite-svelte-icons";
   import { onMount } from "svelte";
   import { getToast } from "$lib/stores/toast.svelte";
   import { formatDuration } from "$lib/functions/formatDuration";
   import { formatDate } from "$lib/functions/formatDate";
-  import { load } from "@tauri-apps/plugin-store";
-  import type { Tpreferences } from "$lib/types/preferences";
   import type { Taircraft } from "$lib/types/aircraft";
   import { openFlightradar } from "$lib/functions/openFlightradar";
   import { fly } from "svelte/transition";
@@ -53,7 +51,6 @@
 
     const flightsToUpdate = [...flights]
 
-    // Process each flight's airport data
     for (let i = 0; i < flightsToUpdate.length; i++) {
       try {
         const flight = flightsToUpdate[i]
@@ -579,7 +576,6 @@
             <DropdownDivider />
             <DropdownItem onclick={async () => {await deleteFlight(flight)}} class="flex gap-2"> <FireOutline color="red" /> Delete</DropdownItem>
           </Dropdown>
-          
           {/each}
         {/key}
         {/key}
