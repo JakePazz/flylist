@@ -31,6 +31,8 @@
   let settings: Tsettings = $state({
     preferences: {
       table_row_count: 10,
+      duration_filter_button_interval: 15,
+      duration_filter_scroll_interval: 5,
       toasts: {
         info_success_duration: 1500,
         error_duration: 5000
@@ -130,6 +132,8 @@
     settings = {
       preferences: {
         table_row_count: 10,
+        duration_filter_button_interval: 15,
+        duration_filter_scroll_interval: 5,
         toasts: {
           info_success_duration: 1500,
           error_duration: 5000
@@ -291,6 +295,24 @@
             </span>
           
             <Input bind:value={settings.preferences.table_row_count} type="number" defaultClass="w-18 font-medium text-lg"/>
+          </div>
+          
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2">
+              <h3 class="text-white mr-6">Duration Filter Button Interval</h3>
+              <p class="text-gray-500 mr-4">The amount of minutes incremented when using the + and - buttons for a duration filter</p>
+            </span>
+          
+            <Input bind:value={settings.preferences.duration_filter_button_interval} type="number" defaultClass="w-18 font-medium text-lg"/>
+          </div>
+
+          <div class="flex justify-between items-center w-full mt-6">
+            <span class="flex flex-col gap-2 ">
+              <h3 class="text-white mr-6">Duration Filter Scroll Interval</h3>
+              <p class="text-gray-500 mr-4">The amount of minutes incremented when scrolling over a duration filter</p>
+            </span>
+          
+            <Input bind:value={settings.preferences.duration_filter_scroll_interval} type="number" defaultClass="w-18 font-medium text-lg"/>
           </div>
 
           <span class="w-full h-[2px] border-b-[1px] rounded border-gray-700 my-4"></span>

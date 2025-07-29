@@ -133,8 +133,7 @@ export class FlyListDB {
   static async editFlight(flight: Tflight, updatedFlight: Tflight): Promise<boolean> {
     return this.withConnection(async (db) => {
       try {
-
-        if (flight.id === updatedFlight.id) {
+        if (flight.id !== updatedFlight.id) {
           throw "flight and updatedFlight {id} did not match"
         }
         
@@ -165,7 +164,7 @@ export class FlyListDB {
         
         return true
       } catch (error) {
-        throw new Error(`Error when archiving flight with id of '${updatedFlight.id}': ${error}`)
+        throw new Error(`Error when editing flight with id of '${updatedFlight.id}': ${error}`)
       }
     })
   }
