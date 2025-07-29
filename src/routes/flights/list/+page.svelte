@@ -346,6 +346,10 @@
 
   function toggleAircraftFilter(aircraft: Taircraft) {
     if (flightFilters.aircraftIds.includes(aircraft.id)) {
+      if (flightFilters.aircraftIds.length < 2) {
+        return
+      }
+
       flightFilters.aircraftIds = flightFilters.aircraftIds.filter((id) => {
         if (id === aircraft.id) return false
         return true
