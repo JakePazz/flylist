@@ -114,7 +114,7 @@
       addAirport()
     }
 
-    if (event.code === "Backspace" || event.code === "Delete") {
+    if (event.code === "Backspace" || event.code === "Delete" && currentInput.length < 1) {
       airportsList.pop()
       onChange({category: airportCategory, airports: airportsList})
     }

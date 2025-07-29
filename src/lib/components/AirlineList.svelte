@@ -102,7 +102,7 @@
         return
       }
 
-      if (event.code === "Backspace" || event.code === "Delete") {
+      if ((event.code === "Backspace" || event.code === "Delete") && currentInput.length < 1) {
         airlinesList.pop()
         onChange({airlines: airlinesList})
         return
