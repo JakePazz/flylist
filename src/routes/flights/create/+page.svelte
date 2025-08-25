@@ -233,7 +233,6 @@
           
           <Helper class="text-sm mt-1">Update your aircraft in <a href="/settings" class="font-medium text-primary-600 hover:underline dark:text-primary-500">settings</a></Helper>
         </span>
-
         
         <span class="flex-1">
           <Label>Hours</Label>

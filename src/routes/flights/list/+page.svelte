@@ -173,8 +173,55 @@
   // Menu Options (editFlight, deleteFlight, openEditModal, archiveFlight)
 
   async function editFlight(flight: Tflight, updated: Tflight) {
-
     try {
+      // Departure Airport valid check
+      const depAirport = await FlyListDB.getAirport(updated.route.dep_airport)
+      if (!depAirport) {
+        toast.addToast({
+          title: "Departure airport invalid",
+          type: "error"
+        })
+        return
+      }
+
+      // Arrival Airport valid check
+      const arrAirport = await FlyListDB.getAirport(updated.route.arr_airport)
+      if (!arrAirport) {
+        toast.addToast({
+          title: "Arrival airport invalid",
+          type: "error"
+        })
+        return
+      }
+
+      // Airline ICAO valid check
+      const airline = await FlyListDB.getAirline(updated.company.airline_icao)
+      if (!airline) {
+        toast.addToast({
+          title: "Airline ICAO invalid",
+          type: "error"
+        })
+        return
+      }
+
+      // Duration is a positive value
+      if (updated.duration <= 0) {
+        toast.addToast({
+          title: "Duration invalid",
+          type: "error"
+        })
+        return
+      }
+
+      // Flight number provided check
+      if (!updated.company.fl_no) {
+        toast.addToast({
+          title: "Flight number required",
+          type: "error"
+        })
+        return
+      }
+
       const result = await FlyListDB.editFlight(flight, updated)
 
       if (result) {
@@ -191,7 +238,7 @@
       }
 
       editModal = false
-      await refreshFlights(false) 
+      await refreshFlights(false)
     } catch (error) {
       console.error(error)
       toast.addToast({
@@ -208,14 +255,14 @@
     editModalMinutes = flight.duration % 60
 
     editModalFlight = flight
-    editModalContent = JSON.parse(JSON.stringify(flight)) // Will create deep copy
+    editModalEditedFlight = JSON.parse(JSON.stringify(flight)) // Will create deep copy
     editModal = true
   }
 
   // Update edit modal duration value to reflect hours and minutes input
   $effect(() => {
-    if (editModalContent?.duration) {
-      editModalContent.duration = (editModalHours * 60) + editModalMinutes
+    if (editModalEditedFlight?.duration) {
+      editModalEditedFlight.duration = (editModalHours * 60) + editModalMinutes
     }
   })
 
@@ -257,10 +304,10 @@
 
   // Edit Modal
   let editModal = $state(false)
-  let editModalContent: Tflight | undefined = $state()
+  let editModalEditedFlight: Tflight | undefined = $state()
   let editModalFlight: Tflight | undefined = $state()
-  let editModalHours: number = $state(0);
-  let editModalMinutes: number = $state(0);
+  let editModalHours: number = $state(0)
+  let editModalMinutes: number = $state(0)
 
   let editAircraftGroup = $state(1)
 
@@ -269,9 +316,9 @@
     const ac = aircrafts.find((ac) => ac.id === editAircraftGroup)
     if (!ac) return
 
-    if (!editModalContent) return
+    if (!editModalEditedFlight) return
 
-    editModalContent.aircraft = ac
+    editModalEditedFlight.aircraft = ac
   })
 
   // Row Expansion
@@ -686,70 +733,74 @@
 </div>
 
 <Modal open={editModal} on:close={() => {editModal = false}}>
-  {#if editModalContent && editModalFlight}
-    <form class="flex flex-col gap-2">
-      <h4 class="text-xl font-medium text-white flex items-center">Edit Flight #{editModalContent.id}</h4>
-      <p class="text-gray-500 ">Update details of this existing flight.</p>
-
-      <div class="flex gap-6">
-        <span class="flex-1">
-          <Label>Departure Airport</Label>
-          <Input bind:value={editModalContent.route.dep_airport}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Arrival Airport</Label>
-          <Input bind:value={editModalContent.route.arr_airport}/>
-        </span>
-      </div>
-  
-      <div class="flex gap-6">
-        <span class="flex-1">
-          <Label>Flight Number</Label>
-          <Input bind:value={editModalContent.company.fl_no}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Callsign</Label>
-          <Input bind:value={editModalContent.company.callsign}/>
-        </span>
-      </div>
-  
-      <div class="flex gap-6 ">
-        <span class="flex-4">
-          <Label>Aircraft Type</Label>
-          {#key editAircraftGroup}
-            <Button color="alternative" class="w-max">
-              {aircrafts.find((ac) => ac.id === editAircraftGroup)?.name || "Select Aircraft"} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
-            </Button>
-            <Dropdown class="w-44 p-3 space-y-3 text-sm">
-              {#each aircrafts as aircraft}
-              <li class="rounded-sm p-2 hover:bg-gray-100 dark:hover:bg-gray-600">
-                <Radio name="Aircraft Type" bind:group={editAircraftGroup} value={aircraft.id}>{aircraft.name}</Radio>
-              </li>
-              {/each}
-            </Dropdown>
-          {/key}
-        </span>
-  
-        
-        <span class="flex-1">
-          <Label>Hours</Label>
-          <Input type="number" bind:value={editModalHours}/>
-        </span>
-        
-        <span class="flex-1">
-          <Label>Minutes</Label>
-          <Input type="number" bind:value={editModalMinutes}/>
-        </span>
-      </div>
-  
-      <Button onclick={() => {
-        if (editModalContent && editModalFlight) {
-          editFlight(editModalFlight, editModalContent)
-        }
-      }}><FloppyDiskOutline class="w-5 h-5 me-2" /> Save Changes</Button>  
+  {#if editModalEditedFlight && editModalFlight}
+  <form class="flex flex-col gap-2">
+    <h4 class="text-xl font-medium text-white flex items-center">Edit Flight #{editModalEditedFlight.id}</h4>
+    <p class="text-gray-500 ">Update details of this existing flight.</p>
+    
+    <div class="flex gap-6">
+      <span class="flex-1">
+        <Label>Departure Airport</Label>
+        <Input bind:value={editModalEditedFlight.route.dep_airport}/>
+      </span>
+      
+      <span class="flex-1">
+        <Label>Arrival Airport</Label>
+        <Input bind:value={editModalEditedFlight.route.arr_airport}/>
+      </span>
+    </div>
+    
+    <div class="flex gap-6">
+      <span class="flex-2">
+        <Label>Airline</Label>
+        <Input bind:value={editModalEditedFlight.company.airline_icao}/>
+      </span>
+      
+      <span class="flex-3">
+        <Label>Flight Number</Label>
+        <Input bind:value={editModalEditedFlight.company.fl_no}/>
+      </span>
+      
+      <span class="flex-3">
+        <Label>Callsign</Label>
+        <Input bind:value={editModalEditedFlight.company.callsign}/>
+      </span>
+    </div>
+    
+    <div class="flex gap-6 ">
+      <span class="flex-4">
+        <Label>Aircraft Type</Label>
+        {#key editAircraftGroup}
+        <Button color="alternative" class="w-max">
+          {aircrafts.find((ac) => ac.id === editAircraftGroup)?.name || "Select Aircraft"} <ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" />
+        </Button>
+        <Dropdown class="w-44 p-3 space-y-3 text-sm">
+          {#each aircrafts as aircraft}
+          <li class="rounded-sm p-2 hover:bg-gray-100 dark:hover:bg-gray-600">
+            <Radio name="Aircraft Type" bind:group={editAircraftGroup} value={aircraft.id}>{aircraft.name}</Radio>
+          </li>
+          {/each}
+        </Dropdown>
+        {/key}
+      </span>
+      
+      
+      <span class="flex-1">
+        <Label>Hours</Label>
+        <Input min="0" max="10" type="number" bind:value={editModalHours}/>
+      </span>
+      
+      <span class="flex-1">
+        <Label>Minutes</Label>
+        <Input min="0" max="60" type="number" bind:value={editModalMinutes}/>
+      </span>
+    </div>
+    
+    <Button onclick={() => {
+      if (editModalEditedFlight && editModalFlight) {
+        editFlight(editModalFlight, editModalEditedFlight)
+      }
+    }}><FloppyDiskOutline class="w-5 h-5 me-2" /> Save Changes</Button>  
     </form>
-  {/if}
-  
+    {/if}
 </Modal>
